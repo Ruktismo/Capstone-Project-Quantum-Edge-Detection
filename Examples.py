@@ -144,7 +144,7 @@ if running hardware for the first time make sure to run the following cmds in a 
     QiskitRuntimeService.save_account(channel="ibm_quantum", token="MY_IBM_QUANTUM_TOKEN")
 
 Still need to figure out how the circuit is designed.
-The img is not directly used, but it works?
+The img is not directly used, but it works? 
 """
 def hardware2x2():
     # Create a 2x2 image to be run on the hardware

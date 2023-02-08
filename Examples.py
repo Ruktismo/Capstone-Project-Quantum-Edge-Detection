@@ -154,6 +154,14 @@ def hardware2x2():
     # Plotting the image_small using matplotlib
     plot_image(image_small, 'Cropped image')
 
+    #TO DO: amplitude, code (v and h) (then can scale)
+    #use amplitude_encode (encode is circular; example in qiskit) (normalize around circle)
+    #after QuantumCircuit (below),
+    #. on line 169ish;
+
+    #take a look at qiskit; amplitude encoding
+
+
     # Initialize the number of qubits
     data_qb = 2
     anc_qb = 1
@@ -161,6 +169,9 @@ def hardware2x2():
 
     # Create the circuit for horizontal scan
     qc_small_h = QuantumCircuit(total_qb)
+
+    #TO DO: qc_small_h INITIALIZE (with the horz and vert into range)
+
     qc_small_h.x(1)  # apply XGate to qbit 1
     qc_small_h.h(0)  # apply hadamard gate to qbit 0
 

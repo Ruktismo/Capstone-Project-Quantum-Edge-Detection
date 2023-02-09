@@ -3,6 +3,7 @@
 from qiskit import *
 from qiskit import IBMQ
 from qiskit.compiler import transpile, assemble
+from qiskit.providers.fake_provider.backends.belem.fake_belem import FakeBelemV2
 from qiskit.visualization import *
 from qiskit.visualization import array_to_latex
 from qiskit_ibm_runtime import QiskitRuntimeService, Session, Sampler, Options
@@ -160,7 +161,12 @@ def hardware2x2():
     #. on line 169ish;
 
     #take a look at qiskit; amplitude encoding
+    # Get the amplitude ancoded pixel values
+    # Horizontal: Original image
+    image_norm_h = amplitude_encode(image_small)
 
+    # Vertical: Transpose of Original image
+    image_norm_v = amplitude_encode(image_small.T)
 
     # Initialize the number of qubits
     data_qb = 2
@@ -169,9 +175,8 @@ def hardware2x2():
 
     # Create the circuit for horizontal scan
     qc_small_h = QuantumCircuit(total_qb)
-
-    #TO DO: qc_small_h INITIALIZE (with the horz and vert into range)
-
+    #TODO: qc_small_h INITIALIZE (with the horz and vert into range)
+    qc_small_h.initialize(image_norm_h, range(1, total_qb))
     qc_small_h.x(1)  # apply XGate to qbit 1
     qc_small_h.h(0)  # apply hadamard gate to qbit 0
 
@@ -188,6 +193,7 @@ def hardware2x2():
 
     # Create the circuit for vertical scan
     qc_small_v = QuantumCircuit(total_qb)
+    qc_small_v.initialize(image_norm_v, range(1, total_qb))
     qc_small_v.x(2)
     qc_small_v.h(0)
 
@@ -205,10 +211,14 @@ def hardware2x2():
     # Combine both circuits into a single list
     circ_list = [qc_small_h, qc_small_v]
 
+    # Fake Backend for transpile to decompose circuit to. Locked to Belem for now
+    # Each quantum computer supports different gates, transpile needs to know what gates are available
+    fake_backend = FakeBelemV2() #TODO: Allow user to set backend so they can run on any quantum computer.
+
     # Transpile the circuits for optimized execution on the backend
     # We made the circuits with high-level gates, need to decompose to basic gates so IBMQ hardware can understand
-    qc_small_h_t = transpile(qc_small_h, optimization_level=3)
-    qc_small_v_t = transpile(qc_small_v, optimization_level=3)
+    qc_small_h_t = transpile(qc_small_h, fake_backend, optimization_level=3)
+    qc_small_v_t = transpile(qc_small_v, fake_backend, optimization_level=3)
 
     # Combining both circuits into a list
     circ_list_t = [qc_small_h_t, qc_small_v_t]
@@ -230,7 +240,7 @@ def hardware2x2():
         # Executing the circuits on the backend
         job = sampler.run(circ_list_t, shots=8192)
         # job_monitor(job)  # job_monitor does not work
-        print("Job queued, look to IBM website to get time updates.\nDO NOT CLOSE PROGRAM!!!")
+        print("\nJob queued, look to IBM website to get time updates.\nDO NOT CLOSE PROGRAM!!!")
         # Getting the resultant probability distribution after measurement
         result = job.result()  # Blocking until IBM returns with results
 

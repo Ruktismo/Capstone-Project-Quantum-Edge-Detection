@@ -1,5 +1,5 @@
 # Importing standard Qiskit libraries and configuring account
-# Libs needed qiskit, matplotlib, pylatexenc
+# Libs needed qiskit, matplotlib, pylatexenc, qiskit-ibm-rumtime
 from qiskit import *
 from qiskit import IBMQ
 from qiskit.compiler import transpile, assemble

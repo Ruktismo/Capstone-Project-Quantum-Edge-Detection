@@ -41,6 +41,83 @@ def amplitude_encode(img_data):
     # Return the normalized image as a numpy array
     return np.array(image_norm)
 
+def local16x16():
+    style.use('bmh') #color scheme
+
+    # A 16x16 binary image represented as a numpy array
+    image = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0],
+                      [0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0],
+                      [0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+                      [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+                      [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+
+    plot_image(image, 'Original 16x16 Image')
+
+    # Get amplitude encoded pixel values
+    image_norm_h = amplitude_encode(image)
+    image_norm_v = amplitude_encode(image.T) #Image transpose
+
+    # n = log2 N
+    data_qb = 8
+    anc_qb = 1 #Aux qbit
+    total_qb = data_qb + anc_qb
+
+    #Amplitude permutation unitary
+    D2n_1 = np.roll(np.identity(2 ** total_qb), 1, axis=1)
+
+    # Create the circuit for horizontal scan
+    qc_h = QuantumCircuit(total_qb)
+    qc_h.initialize(image_norm_h, range(1, total_qb))
+    qc_h.h(0)
+    qc_h.unitary(D2n_1, range(total_qb))
+    qc_h.h(0)
+
+    # Create the circuit for vertical scan
+    qc_v = QuantumCircuit(total_qb)
+    qc_v.initialize(image_norm_v, range(1, total_qb))
+    qc_v.h(0)
+    qc_v.unitary(D2n_1, range(total_qb))
+    qc_v.h(0)
+
+    # Combine both circuits into a single list
+    circ_list = [qc_h, qc_v]
+
+    # Simulating the cirucits
+    back = Aer.get_backend('statevector_simulator')
+    results = execute(circ_list, backend=back).result()
+    sv_h = results.get_statevector(qc_h)
+    sv_v = results.get_statevector(qc_v)
+
+
+
+    threshold = lambda amp: (amp > 1e-15 or amp < -1e-15)
+
+
+    edge_scan_h = np.abs(np.array([1 if threshold(sv_h[2 * i + 1].real) else 0 for i in range(2 ** data_qb)])).reshape(16, 16)
+    edge_scan_v = np.abs(np.array([1 if threshold(sv_v[2 * i + 1].real) else 0 for i in range(2 ** data_qb)])).reshape(16,
+                                                                                                                           16).T
+
+    plot_image(edge_scan_h, 'Horizontal scan output')
+    plot_image(edge_scan_v, 'Vertical scan output')
+
+    # Combining the horizontal and vertical component of the result
+    edge_scan_sim = edge_scan_h | edge_scan_v
+
+    # Plotting the original and edge-detected images
+    plot_image(image, 'Original image')
+    plot_image(edge_scan_sim, 'Edge Detected image')
+
 
 """
 8x8 example made from Quskit docs:

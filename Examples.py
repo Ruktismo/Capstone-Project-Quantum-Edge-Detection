@@ -20,10 +20,13 @@ def plot_image(img, title: str):
     plt.title(title)
     plt.xticks(range(img.shape[0]))
     plt.yticks(range(img.shape[1]))
+
+    # NOTE TO SELF; LOOK INTO IMSHOW AND WHAT IT RETURNS; NEW FUNCT FOR VISUAL?
     plt.imshow(img, extent=[0, img.shape[0], img.shape[1], 0], cmap='viridis')
     # A blocking request to display the figure(s) loaded. Block ends when user closes figure(s)
     # Will show glitchy overlap if mutable figures are made before show is called
     plt.show()
+
 
 
 # Convert the raw pixel values to probability amplitudes
@@ -41,8 +44,9 @@ def amplitude_encode(img_data):
     # Return the normalized image as a numpy array
     return np.array(image_norm)
 
+
 def local16x16():
-    style.use('bmh') #color scheme
+    style.use('bmh')  # color scheme
 
     # A 16x16 binary image represented as a numpy array
     image = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -66,14 +70,14 @@ def local16x16():
 
     # Get amplitude encoded pixel values
     image_norm_h = amplitude_encode(image)
-    image_norm_v = amplitude_encode(image.T) #Image transpose
+    image_norm_v = amplitude_encode(image.T)  # Image transpose
 
     # n = log2 N
     data_qb = 8
-    anc_qb = 1 #Aux qbit
+    anc_qb = 1  # Aux qbit
     total_qb = data_qb + anc_qb
 
-    #Amplitude permutation unitary
+    # Amplitude permutation unitary
     D2n_1 = np.roll(np.identity(2 ** total_qb), 1, axis=1)
 
     # Create the circuit for horizontal scan
@@ -99,14 +103,13 @@ def local16x16():
     sv_h = results.get_statevector(qc_h)
     sv_v = results.get_statevector(qc_v)
 
-
-
     threshold = lambda amp: (amp > 1e-15 or amp < -1e-15)
 
-
-    edge_scan_h = np.abs(np.array([1 if threshold(sv_h[2 * i + 1].real) else 0 for i in range(2 ** data_qb)])).reshape(16, 16)
-    edge_scan_v = np.abs(np.array([1 if threshold(sv_v[2 * i + 1].real) else 0 for i in range(2 ** data_qb)])).reshape(16,
-                                                                                                                           16).T
+    edge_scan_h = np.abs(np.array([1 if threshold(sv_h[2 * i + 1].real) else 0 for i in range(2 ** data_qb)])).reshape(
+        16, 16)
+    edge_scan_v = np.abs(np.array([1 if threshold(sv_v[2 * i + 1].real) else 0 for i in range(2 ** data_qb)])).reshape(
+        16,
+        16).T
 
     plot_image(edge_scan_h, 'Horizontal scan output')
     plot_image(edge_scan_v, 'Vertical scan output')
@@ -122,9 +125,11 @@ def local16x16():
 """
 8x8 example made from Quskit docs:
     https://qiskit.org/textbook/ch-applications/quantum-edge-detection.html#Quantum-Probability-Image-Encoding-(QPIE)
-    
+
 Had to change a few things to get it working on local python since jupyter has some built in functions we don't have.
 """
+
+
 def local8x8():
     style.use('bmh')  # This is setting the color scheme for the plots. But I can't find what bmh is in the docs
 
@@ -137,7 +142,10 @@ def local8x8():
                       [0, 0, 0, 1, 1, 1, 1, 0],
                       [0, 0, 0, 1, 1, 1, 1, 0],
                       [0, 0, 0, 0, 0, 0, 0, 0]])
-    plot_image(image, 'Original Image')
+
+    #plot_image(image, 'Original Image')
+    #plt.show()
+
 
     # Get the amplitude ancoded pixel values
     # Horizontal: Original image
@@ -153,7 +161,7 @@ def local8x8():
 
     # Initialize the amplitude permutation unitary
     # i.e. make identity matrix and shift all indexes right one with rollover
-    D2n_1 = np.roll(np.identity(2**total_qb), 1, axis=1)
+    D2n_1 = np.roll(np.identity(2 ** total_qb), 1, axis=1)
 
     # Create the circuit for horizontal scan
     # PyCharm gives a warning that methods "initialize" and "unitary" do not exist. It is ok they are made at runtime.
@@ -171,6 +179,8 @@ def local8x8():
     qc_v.h(0)
     qc_v.unitary(D2n_1, range(total_qb))
     qc_v.h(0)
+
+    ##.DRAW RETURNS FIGURE; into a var?
     qc_v.draw('mpl', fold=-1)
     plt.show()
 
@@ -199,15 +209,38 @@ def local8x8():
     threshold = lambda amp: (amp > 1e-15 or amp < -1e-15)  # Take with caution can destroy/muddle data if set wrong.
 
     # Selecting odd states from the raw statevector and reshaping column vector of size 64 to an 8x8 matrix
-    edge_scan_h = np.abs(np.array([1 if threshold(sv_h[2*i+1].real) else 0 for i in range(2**data_qb)])).reshape(8, 8)
-    edge_scan_v = np.abs(np.array([1 if threshold(sv_v[2*i+1].real) else 0 for i in range(2**data_qb)])).reshape(8, 8).T
+    edge_scan_h = np.abs(np.array([1 if threshold(sv_h[2 * i + 1].real) else 0 for i in range(2 ** data_qb)])).reshape(
+        8, 8)
+    edge_scan_v = np.abs(np.array([1 if threshold(sv_v[2 * i + 1].real) else 0 for i in range(2 ** data_qb)])).reshape(
+        8, 8).T
 
     # Plotting the Horizontal and vertical scans
-    plot_image(edge_scan_h, 'Horizontal scan output')
-    plot_image(edge_scan_v, 'Vertical scan output')
+    #plot_image(edge_scan_h, 'Horizontal scan output')
+    #plot_image(edge_scan_v, 'Vertical scan output')
 
     # Combining the horizontal and vertical component of the result
     edge_scan_sim = edge_scan_h | edge_scan_v
+
+    #combine all images
+    #create base
+    fig, axis = plt.subplots(2, 2)
+
+    #display each image
+    axis[0, 0].imshow(image)
+    axis[0, 1].imshow(edge_scan_h)
+    axis[1, 0].imshow(edge_scan_v)
+    axis[1, 1].imshow(edge_scan_sim)
+
+    #display titles for subplots
+    axis[0, 0].set_title('Original')
+    axis[0, 1].set_title('Horizontal Scan')
+    axis[1, 0].set_title('Vertical Scan')
+    axis[1, 1].set_title('Edge Detected Image')
+
+    #adjust the spacing between images
+    plt.subplots_adjust(hspace = 0.5, wspace = 0.5)
+
+    plt.show()
 
     # Plotting the original and edge-detected images
     plot_image(image, 'Original image')
@@ -218,12 +251,14 @@ def local8x8():
 if running hardware for the first time make sure to run the following cmds in a python console.
     import matplotlib
     from qiskit_ibm_runtime import QiskitRuntimeService
-    
+
     QiskitRuntimeService.save_account(channel="ibm_quantum", token="MY_IBM_QUANTUM_TOKEN")
 
 Still need to figure out how the circuit is designed.
 The img is not directly used, but it works? 
 """
+
+
 def hardware2x2():
     # Create a 2x2 image to be run on the hardware
     image_small = np.array([[0, 1],
@@ -232,12 +267,12 @@ def hardware2x2():
     # Plotting the image_small using matplotlib
     plot_image(image_small, 'Cropped image')
 
-    #TO DO: amplitude, code (v and h) (then can scale)
-    #use amplitude_encode (encode is circular; example in qiskit) (normalize around circle)
-    #after QuantumCircuit (below),
-    #. on line 169ish;
+    # TO DO: amplitude, code (v and h) (then can scale)
+    # use amplitude_encode (encode is circular; example in qiskit) (normalize around circle)
+    # after QuantumCircuit (below),
+    # . on line 169ish;
 
-    #take a look at qiskit; amplitude encoding
+    # take a look at qiskit; amplitude encoding
     # Get the amplitude ancoded pixel values
     # Horizontal: Original image
     image_norm_h = amplitude_encode(image_small)
@@ -252,7 +287,7 @@ def hardware2x2():
 
     # Create the circuit for horizontal scan
     qc_small_h = QuantumCircuit(total_qb)
-    #TODO: qc_small_h INITIALIZE (with the horz and vert into range)
+    # TODO: qc_small_h INITIALIZE (with the horz and vert into range)
     qc_small_h.initialize(image_norm_h, range(1, total_qb))
     qc_small_h.x(1)  # apply XGate to qbit 1
     qc_small_h.h(0)  # apply hadamard gate to qbit 0
@@ -290,7 +325,7 @@ def hardware2x2():
 
     # Fake Backend for transpile to decompose circuit to. Locked to Belem for now
     # Each quantum computer supports different gates, transpile needs to know what gates are available
-    fake_backend = FakeBelemV2() #TODO: Allow user to set backend so they can run on any quantum computer.
+    fake_backend = FakeBelemV2()  # TODO: Allow user to set backend so they can run on any quantum computer.
 
     # Transpile the circuits for optimized execution on the backend
     # We made the circuits with high-level gates, need to decompose to basic gates so IBMQ hardware can understand
@@ -309,7 +344,8 @@ def hardware2x2():
     # Load the IBMQ account. It is not properly loading, but it is saved?
     # IBMQ.load_account()
     # Using Andrew's token since load_account is not working
-    service = QiskitRuntimeService(channel="ibm_quantum", token='b8c71a04bb83f926f2cbd38b0c1ee58d317436795592daf4a1c6780e78d71b8b6e4f46176cd33e46d2a21a01c153a0b706079defa38c530c91242cfbd9416eac')
+    service = QiskitRuntimeService(channel="ibm_quantum",
+                                   token='b8c71a04bb83f926f2cbd38b0c1ee58d317436795592daf4a1c6780e78d71b8b6e4f46176cd33e46d2a21a01c153a0b706079defa38c530c91242cfbd9416eac')
     # Make a new session with IBM
     # Set backend to "ibmq_qasm_simulator" for non-quantum results, for quantum results use "ibmq_belem" or other
     with Session(service=service, backend="ibmq_belem") as session:
@@ -352,6 +388,7 @@ def hardware2x2():
 
     # Plotting the original and edge-detected images
     plot_image(edge_detected_image_small, 'Full Edge Detected Image')
+
 
 def main():
     sim_choice = int(input("1) 8x8 local\n2) 2x2 real-hardware\nWhat simulation to run?\t"))

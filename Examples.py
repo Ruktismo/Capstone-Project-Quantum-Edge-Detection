@@ -2,18 +2,23 @@
 # Libs needed qiskit, matplotlib, pylatexenc, qiskit-ibm-runtime
 from qiskit import *
 from qiskit import IBMQ
-from qiskit.compiler import transpile, assemble
+from qiskit.compiler import transpile
 from qiskit.providers.fake_provider.backends.belem.fake_belem import FakeBelemV2
 from qiskit.visualization import *
-from qiskit.visualization import array_to_latex
-from qiskit_ibm_runtime import QiskitRuntimeService, Session, Sampler, Options
-from qiskit.tools.monitor import job_monitor
+from qiskit_ibm_runtime import QiskitRuntimeService, Session, Sampler
 from qiskit.visualization import plot_histogram
 
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import style
 
+# error check for cmd args
+try:
+    TOKEN = sys.argv[1]
+except IndexError:
+    print(f"ERROR: INCORRECT NUMBER OF ARGS\nExpected: Token\n Got: {sys.argv}")
+    exit()
 
 # Function for plotting the image using matplotlib
 def plot_image(img, title: str):
@@ -26,7 +31,6 @@ def plot_image(img, title: str):
     # A blocking request to display the figure(s) loaded. Block ends when user closes figure(s)
     # Will show glitchy overlap if mutable figures are made before show is called
     plt.show()
-
 
 
 # Convert the raw pixel values to probability amplitudes
@@ -128,10 +132,8 @@ def local16x16():
 
 Had to change a few things to get it working on local python since jupyter has some built in functions we don't have.
 """
-
-
 def local8x8():
-    style.use('bmh')  # This is setting the color scheme for the plots. But I can't find what bmh is in the docs
+    style.use('bmh')  # This is setting the color scheme for the plots.
 
     # A 8x8 binary image represented as a numpy array
     image = np.array([[0, 0, 0, 0, 0, 0, 0, 0],
@@ -142,10 +144,6 @@ def local8x8():
                       [0, 0, 0, 1, 1, 1, 1, 0],
                       [0, 0, 0, 1, 1, 1, 1, 0],
                       [0, 0, 0, 0, 0, 0, 0, 0]])
-
-    #plot_image(image, 'Original Image')
-    #plt.show()
-
 
     # Get the amplitude ancoded pixel values
     # Horizontal: Original image
@@ -193,15 +191,6 @@ def local8x8():
     sv_h = results.get_statevector(qc_h)
     sv_v = results.get_statevector(qc_v)
 
-    """
-    Prints the array of results.
-    Commented out since idk how to properly display it, and it's not too important to look at.
-    print('Horizontal scan statevector:')
-    display(array_to_latex(sv_h[:30], max_size=30))  # display does not work with latex even in the docs 
-    print()
-    print('Vertical scan statevector:')
-    display(array_to_latex(sv_v[:30], max_size=30))
-    """
     # Classical postprocessing for plotting the output
 
     # Defining a lambda function for thresholding to binary values
@@ -213,10 +202,6 @@ def local8x8():
         8, 8)
     edge_scan_v = np.abs(np.array([1 if threshold(sv_v[2 * i + 1].real) else 0 for i in range(2 ** data_qb)])).reshape(
         8, 8).T
-
-    # Plotting the Horizontal and vertical scans
-    #plot_image(edge_scan_h, 'Horizontal scan output')
-    #plot_image(edge_scan_v, 'Vertical scan output')
 
     # Combining the horizontal and vertical component of the result
     edge_scan_sim = edge_scan_h | edge_scan_v
@@ -257,8 +242,6 @@ if running hardware for the first time make sure to run the following cmds in a 
 Still need to figure out how the circuit is designed.
 The img is not directly used, but it works? 
 """
-
-
 def hardware2x2():
     # Create a 2x2 image to be run on the hardware
     image_small = np.array([[0, 1],
@@ -343,9 +326,8 @@ def hardware2x2():
 
     # Load the IBMQ account. It is not properly loading, but it is saved?
     # IBMQ.load_account()
-    # Using Andrew's token since load_account is not working
-    service = QiskitRuntimeService(channel="ibm_quantum",
-                                   token='b8c71a04bb83f926f2cbd38b0c1ee58d317436795592daf4a1c6780e78d71b8b6e4f46176cd33e46d2a21a01c153a0b706079defa38c530c91242cfbd9416eac')
+    # Using token from arg[1] since load_account is not working
+    service = QiskitRuntimeService(channel="ibm_quantum", token=TOKEN)
     # Make a new session with IBM
     # Set backend to "ibmq_qasm_simulator" for non-quantum results, for quantum results use "ibmq_belem" or other
     with Session(service=service, backend="ibmq_belem") as session:

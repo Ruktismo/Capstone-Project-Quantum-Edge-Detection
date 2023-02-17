@@ -69,8 +69,7 @@ def local16x16():
                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-
-    plot_image(image, 'Original 16x16 Image')
+    #plot_image(image, 'Original 16x16 Image')
 
     # Get amplitude encoded pixel values
     image_norm_h = amplitude_encode(image)
@@ -115,15 +114,40 @@ def local16x16():
         16,
         16).T
 
-    plot_image(edge_scan_h, 'Horizontal scan output')
-    plot_image(edge_scan_v, 'Vertical scan output')
+
+    #plot_image(edge_scan_h, 'Horizontal scan output')
+    #plot_image(edge_scan_v, 'Vertical scan output')
 
     # Combining the horizontal and vertical component of the result
     edge_scan_sim = edge_scan_h | edge_scan_v
 
+    #combine all images
+    #create base
+    fig, imageAxis = plt.subplots(2, 2)
+
+    #display each image
+    imageAxis[0, 0].imshow(image)
+    imageAxis[0, 1].imshow(edge_scan_h)
+    imageAxis[1, 0].imshow(edge_scan_v)
+    imageAxis[1, 1].imshow(edge_scan_sim)
+
+    #display titles for subplots
+    imageAxis[0, 0].set_title('Original')
+    imageAxis[0, 1].set_title('Horizontal Scan')
+    imageAxis[1, 0].set_title('Vertical Scan')
+    imageAxis[1, 1].set_title('Edge Detected Image')
+
+    #adjust the spacing between images
+    plt.subplots_adjust(hspace = 0.5, wspace = 0.75)
+
+    #Show/Display
+    plt.show()
+
+
     # Plotting the original and edge-detected images
-    plot_image(image, 'Original image')
-    plot_image(edge_scan_sim, 'Edge Detected image')
+    #plot_image(image, 'Original image')
+    #plot_image(edge_scan_sim, 'Edge Detected image')
+
 
 
 """
@@ -208,28 +232,26 @@ def local8x8():
 
     #combine all images
     #create base
-    fig, axis = plt.subplots(2, 2)
+    fig, imageAxis = plt.subplots(2, 2)
 
     #display each image
-    axis[0, 0].imshow(image)
-    axis[0, 1].imshow(edge_scan_h)
-    axis[1, 0].imshow(edge_scan_v)
-    axis[1, 1].imshow(edge_scan_sim)
+    imageAxis[0, 0].imshow(image)
+    imageAxis[0, 1].imshow(edge_scan_h)
+    imageAxis[1, 0].imshow(edge_scan_v)
+    imageAxis[1, 1].imshow(edge_scan_sim)
 
     #display titles for subplots
-    axis[0, 0].set_title('Original')
-    axis[0, 1].set_title('Horizontal Scan')
-    axis[1, 0].set_title('Vertical Scan')
-    axis[1, 1].set_title('Edge Detected Image')
+    imageAxis[0, 0].set_title('Original')
+    imageAxis[0, 1].set_title('Horizontal Scan')
+    imageAxis[1, 0].set_title('Vertical Scan')
+    imageAxis[1, 1].set_title('Edge Detected Image')
 
     #adjust the spacing between images
-    plt.subplots_adjust(hspace = 0.5, wspace = 0.5)
+    plt.subplots_adjust(hspace = 0.5, wspace = 0.75)
 
+    #Show/Display
     plt.show()
 
-    # Plotting the original and edge-detected images
-    plot_image(image, 'Original image')
-    plot_image(edge_scan_sim, 'Edge Detected image')
 
 
 """
@@ -374,18 +396,18 @@ def hardware2x2():
 
 def main():
     sim_choice = int(input("1) 8x8 local\n"
-                           "2) 2x2 real-hardware\n"
-                           "3) 16x16 local"
-                           "\nWhat simulation to run?\t"))
+                           "2) 16x16 local\n"
+                           "3) 2x2 real-hardware\n"
+                            "\nWhat simulation to run?\t"))
     if sim_choice == 1:
         local8x8()
     elif sim_choice == 2:
+        local16x16()
+    elif sim_choice == 3:
         input("\nNote: Running on real hardware takes a long queue time, hours long depending on availability."
               "\nIf you want to end the experiment you have to go to the IBM website and cancel the job."
               "\nHit enter to confirm your selection.")
         hardware2x2()
-    elif sim_choice == 3:
-        local16x16()
     else:
         print("invalid choice")
 

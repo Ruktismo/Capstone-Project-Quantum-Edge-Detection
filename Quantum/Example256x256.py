@@ -166,20 +166,44 @@ def sim256x256():
         # Getting the resultant probability distribution after measurement
         result = job.result()  # Blocking until IBM returns with results
 
-    #TODO:
+    #TODO: TURN ALL OF BELOW INTO 256X256
+
+    ##NOTE::: COPIED CODE FROM 2X2 HARDWARE FOR TEMP PLACEHOLDER
 
     # Make a zeroed nparray of size chunk for each h and v chunk.
+    # Make dic with keys that are binaries from 0 to 2^total_qb. with values of 0.0 to start.
+    # This is done since IBM will not return Qbit configs that are 0. So we need to map the results to the full space
+    # Formatted String: 0 (for padding zeros) {total_qb} (for bit-string size) b (to format from int to binary)
+    counts_h = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
+    counts_v = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
+    # Transfer all known values form experiment results to dic
+    for k, v in result.quasi_dists[0].items():
+        counts_h[format(k, f"0{total_qb}b")] = v
+    for k, v in result.quasi_dists[1].items():
+        counts_v[format(k, f"0{total_qb}b")] = v
+
+    print('Counts for Horizontal scan:')
+    plot_histogram(counts_h)
+    plt.show()
+
+    print('\n\nCounts for Vertical scan:')
+    plot_histogram(counts_v)
+    plt.show()
 
     # Map each chunk to its corresponding array.
 
     # Extract odd numbered states for each chunk. (maybe do it in the mapping above to save time?)
+    edge_scan_small_h = np.array([counts_h[f'{2 * i + 1:03b}'] for i in range(2 ** data_qb)]).reshape(2, 2)
+    edge_scan_small_v = np.array([counts_v[f'{2 * i + 1:03b}'] for i in range(2 ** data_qb)]).reshape(2, 2).T
 
     # Add together the H and V of each chunk.
+    edge_detected_image_small = edge_scan_small_h + edge_scan_small_v
+
 
     # Stitch the chunks back into one image.
 
     # Plot edge detected image.
-
+    plot_image(edge_detected_image_small, 'Full Edge Detected Image')
 
 def main():
     print("Running 256x256 sim.")

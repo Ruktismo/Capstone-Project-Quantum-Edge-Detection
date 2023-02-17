@@ -373,7 +373,10 @@ def hardware2x2():
 
 
 def main():
-    sim_choice = int(input("1) 8x8 local\n2) 2x2 real-hardware\nWhat simulation to run?\t"))
+    sim_choice = int(input("1) 8x8 local\n"
+                           "2) 2x2 real-hardware\n"
+                           "3) 16x16 local"
+                           "\nWhat simulation to run?\t"))
     if sim_choice == 1:
         local8x8()
     elif sim_choice == 2:
@@ -381,6 +384,8 @@ def main():
               "\nIf you want to end the experiment you have to go to the IBM website and cancel the job."
               "\nHit enter to confirm your selection.")
         hardware2x2()
+    elif sim_choice == 3:
+        local16x16()
     else:
         print("invalid choice")
 

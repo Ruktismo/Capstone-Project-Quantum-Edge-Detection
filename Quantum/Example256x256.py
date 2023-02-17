@@ -73,8 +73,8 @@ def circuit_h(img, total_qb):
     qc_small_h.x(0)
     qc_small_h.cx(0, 1)
     qc_small_h.ccx(0, 1, 2)
-    # Decrement gate - END
 
+    # Decrement gate - END
     qc_small_h.h(0)
     qc_small_h.measure_all()
     return qc_small_h
@@ -97,7 +97,7 @@ def circuit_v(img, total_qb):
     qc_small_v.measure_all()
     return qc_small_v
 
-
+#####################################################
 def sim256x256():
     style.use('bmh')  # This is setting the color scheme for the plots.
     # TODO add image path
@@ -166,7 +166,10 @@ def sim256x256():
         # Getting the resultant probability distribution after measurement
         result = job.result()  # Blocking until IBM returns with results
 
+    #TODO:
+
     # Make a zeroed nparray of size chunk for each h and v chunk.
+
     # Map each chunk to its corresponding array.
 
     # Extract odd numbered states for each chunk. (maybe do it in the mapping above to save time?)

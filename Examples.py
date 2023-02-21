@@ -14,11 +14,7 @@ import matplotlib.pyplot as plt
 from matplotlib import style
 
 # error check for cmd args
-try:
-    TOKEN = sys.argv[1]
-except IndexError:
-    print(f"ERROR: INCORRECT NUMBER OF ARGS\nExpected: Token\n Got: {sys.argv}")
-    exit()
+
 
 # Function for plotting the image using matplotlib
 def plot_image(img, title: str):

@@ -52,10 +52,10 @@ def amplitude_encode(img_data):
 
 
 def crop(image, hsize, vsize):
-    h_chunks = image.size[0] / hsize
-    v_chunks = image.size[1] / vsize
+    h_chunks = image.shape[0] / hsize
+    v_chunks = image.shape[1] / vsize
     # quick error check for hsplit and vsplit
-    if (image.size[0] % hsize != 0) or (image.size[1] % vsize != 0):
+    if (image.shape[0] % hsize != 0) or (image.shape[1] % vsize != 0):
         print("ERROR\nImage is not cleanly dividable by chunk size.")
     # Split the image vertically then pump all vertical slices into hsplit to get square chunks
     nested_chunks = [np.hsplit(vs, h_chunks) for vs in np.vsplit(image, v_chunks)]
@@ -102,9 +102,9 @@ def circuit_v(img, total_qb):
 #####################################################
 def sim256x256():
     style.use('bmh')  # This is setting the color scheme for the plots.
-    # TODO add image path
+    #add image path
     pic = Image.open("./edge_detection_input.jpg").crop((0, 0, 255, 255))  # open image and crop to 256x256
-    image = numpy.asarray(pic)
+    image = numpy.asarray(pic)  #import numpy as an array
 
     plot_image(image, 'Original Image')
 
@@ -120,7 +120,8 @@ def sim256x256():
     for chunckV in croped_imgs:
         image_norms_v.append(amplitude_encode(chunckV.T))
 
-    #todo: print the image_norms v and h here to see
+
+    #print the image_norms v and h here to see
     print(image_norms_h)
     print(image_norms_v)
 
@@ -178,13 +179,23 @@ def sim256x256():
 
     ##NOTE::: COPIED CODE FROM 2X2 HARDWARE FOR TEMP PLACEHOLDER
 
-    # Make a zeroed nparray of size chunk for each h and v chunk.
     # Make dic with keys that are binaries from 0 to 2^total_qb. with values of 0.0 to start.
     # This is done since IBM will not return Qbit configs that are 0. So we need to map the results to the full space
     # Formatted String: 0 (for padding zeros) {total_qb} (for bit-string size) b (to format from int to binary)
-
     counts_h = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
     counts_v = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
+
+    # Make a zeroed nparray of size chunk for each h and v chunk.
+    hArray = []
+    vArray = []
+    for zeroArrayH in image_norms_h:
+        hArray.append(numpy.zeros((16, 16)))
+
+    for zeroArrayV in image_norms_v:
+        vArray.append(numpy.zeros((16, 16)))
+
+    print(hArray)
+
     # Transfer all known values form experiment results to dic
     for k, v in result.quasi_dists[0].items():
         counts_h[format(k, f"0{total_qb}b")] = v

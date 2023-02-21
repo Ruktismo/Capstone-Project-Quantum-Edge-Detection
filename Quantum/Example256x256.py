@@ -1,6 +1,8 @@
+import numpy
 from qiskit import *
 from qiskit.compiler import transpile
 from qiskit.providers.fake_provider.backends.belem.fake_belem import FakeBelemV2
+from qiskit.visualization import plot_histogram
 from qiskit_ibm_runtime import QiskitRuntimeService, Session, Sampler
 
 import sys
@@ -101,8 +103,8 @@ def circuit_v(img, total_qb):
 def sim256x256():
     style.use('bmh')  # This is setting the color scheme for the plots.
     # TODO add image path
-    pic = Image.open("PATH").crop((0, 0, 255, 255))  # open image and crop to 256x256
-    image = np.array(pic.getdata()).reshape(pic.size[0], pic.size[1])  # convert pic to numpy array
+    pic = Image.open("./edge_detection_input.jpg").crop((0, 0, 255, 255))  # open image and crop to 256x256
+    image = numpy.asarray(pic)
 
     plot_image(image, 'Original Image')
 
@@ -117,6 +119,12 @@ def sim256x256():
     image_norms_v = []
     for chunckV in croped_imgs:
         image_norms_v.append(amplitude_encode(chunckV.T))
+
+    #todo: print the image_norms v and h here to see
+    print(image_norms_h)
+    print(image_norms_v)
+
+
 
     # Initialize some global variable for number of qubits
     data_qb = 8  # Set to ceil(log_2(image.CropSize)) hardcoded as 8 since image crop is 16x16
@@ -174,6 +182,7 @@ def sim256x256():
     # Make dic with keys that are binaries from 0 to 2^total_qb. with values of 0.0 to start.
     # This is done since IBM will not return Qbit configs that are 0. So we need to map the results to the full space
     # Formatted String: 0 (for padding zeros) {total_qb} (for bit-string size) b (to format from int to binary)
+
     counts_h = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
     counts_v = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
     # Transfer all known values form experiment results to dic
@@ -208,6 +217,7 @@ def sim256x256():
 def main():
     print("Running 256x256 sim.")
 
+    sim256x256()
 
 if __name__ == "__main__":
     main()

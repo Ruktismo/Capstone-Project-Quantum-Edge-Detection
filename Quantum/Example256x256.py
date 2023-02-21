@@ -28,6 +28,8 @@ except ValueError:
 # Function for plotting the image using matplotlib
 def plot_image(img, title: str):
     plt.title(title)
+    plt.xticks(range(img.shape[0]))
+    plt.yticks(range(img.shape[1]))
     plt.imshow(img, extent=[0, img.shape[0], img.shape[1], 0], cmap='viridis')
     # A blocking request to display the figure(s) loaded. Block ends when user closes figure(s)
     # Will show glitchy overlap if mutable figures are made before show is called
@@ -137,9 +139,7 @@ def sim256x256():
 
     # make a circuit for each horizontal and vertical chunk
     circuits_h = []
-    count = 0
     for img in image_norms_h:
-        count = count + 1
         circuits_h.append(circuit_h(img, total_qb))
 
     circuits_v = []
@@ -155,6 +155,18 @@ def sim256x256():
 
     counts_h = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
     counts_v = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
+
+    # Make a zeroed nparray of size chunk for each h and v chunk.
+    hArray = []
+    vArray = []
+    for zeroArrayH in image_norms_h:
+        hArray.append(numpy.zeros((16, 16)))
+
+    for zeroArrayV in image_norms_v:
+        vArray.append(numpy.zeros((16, 16)))
+
+    print(hArray)
+
     # Transfer all known values form experiment results to dic
     for k, v in result.quasi_dists[0].items():
         counts_h[format(k, f"0{total_qb}b")] = v

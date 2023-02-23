@@ -11,7 +11,6 @@ from PIL import Image
 import matplotlib.pyplot as plt
 from matplotlib import style
 
-
 # error check for cmd args
 try:
     TOKEN = sys.argv[1]
@@ -28,8 +27,6 @@ except ValueError:
 # Function for plotting the image using matplotlib
 def plot_image(img, title: str):
     plt.title(title)
-    plt.xticks(range(img.shape[0]))
-    plt.yticks(range(img.shape[1]))
     plt.imshow(img, extent=[0, img.shape[0], img.shape[1], 0], cmap='viridis')
     # A blocking request to display the figure(s) loaded. Block ends when user closes figure(s)
     # Will show glitchy overlap if mutable figures are made before show is called
@@ -40,37 +37,38 @@ def plot_image(img, title: str):
 # i.e. sum of all pixels is one
 def amplitude_encode(img_data):
     # Calculate the RMS value
-    rms = np.sqrt(np.sum(np.sum(img_data ** 2, axis=1)))  # sum up all pixels to get total
-
-    # Create normalized image
-    image_norm = []
-    for arr in img_data:
-        for ele in arr:
-            image_norm.append(ele / rms)  # divide pixel by total to get probability
+    rms = np.sqrt(np.sum(img_data ** 2))  # sum up all pixels to get total
+    # if img has non-zero pixels
+    if rms != 0:
+        # Create normalized image
+        image_norm = []
+        for arr in img_data:
+            for ele in arr:
+                image_norm.append(ele / rms)  # divide pixel by total to get probability
+    else:
+        image_norm = [0.0] * img_data.size  # if rms is zero then chunk is empty
 
     # Return the normalized image as a numpy array
-    return np.array(image_norm)
+    ret = np.array(image_norm)
+    return ret
 
 
 def crop(image, hsize, vsize):
-    h_chunks = (image.shape[0] + 1 )/ hsize
-    v_chunks = (image.shape[1] + 1) / vsize
+    h_chunks = image.shape[0] / hsize
+    v_chunks = image.shape[1] / vsize
     # quick error check for hsplit and vsplit
     if (image.shape[0] % hsize != 0) or (image.shape[1] % vsize != 0):
         print("ERROR\nImage is not cleanly dividable by chunk size.")
+        exit()
     # Split the image vertically then pump all vertical slices into hsplit to get square chunks
-    #TODO
-    #check vchunks division error
     nested_chunks = [np.hsplit(vs, h_chunks) for vs in np.vsplit(image, v_chunks)]
     # The split process leaves us with the chunks in a nested array, flatten to a list
     img_chunks = [item for sublist in nested_chunks for item in sublist]
     return img_chunks
 
-# TODO this ia a copy of the 2x2. need to update to 16x16
+# TODO this ia a copy of the state vector version. need to update to 16x16
 def circuit_h(img, total_qb):
     # Create the circuit for horizontal scan
-
-
     D2n_1 = np.roll(np.identity(2 ** total_qb), 1, axis=1)
 
     qc_h = QuantumCircuit(total_qb)
@@ -99,58 +97,62 @@ def circuit_v(img, total_qb):
 #####################################################
 def sim256x256():
     style.use('bmh')  # This is setting the color scheme for the plots.
-    # TODO add image path
-    image_size = 255
-    image_crop_size = 8
-    pic = Image.open("./edge_detection_input.jpg").crop((0, 0, 255, 255))  # open image and crop to 256x256
-    image_raw = numpy.asarray(pic)
-    image = []
-    for i in range(image_size):
-        image.append([])
-        for j in range(image_size):
-            image[i].append(image_raw[i][j][0] / 255)
+    pic = Image.open("./edge_detection_input.jpg")  # open image and crop to 256x256
+    image_RGB = numpy.asarray(pic)
 
-    image = np.asarray(image)
+    # The image is in RGB, but we only need one BW
+    # Convert the RBG component of the image to B&W image, as a numpy (uint8) array
+    image = []
+    for i in range(image_RGB.shape[0]):
+        image.append([])
+        for j in range(image_RGB.shape[1]):
+            image[i].append(image_RGB[i][j][0] / 255.0)
+
+    image = np.array(image)
 
     plot_image(image, 'Original Image')
 
+    # Then crop the result into chunks
     croped_imgs = crop(image, H_SIZE, V_SIZE)
-    # Get the amplitude encoded pixel values
-    # Horizontal: Original image
+
+    # Get amplitude encoding of chunks for both H and V
     image_norms_h = []
-    for chunkH in croped_imgs:
-        image_norms_h.append(amplitude_encode(chunkH))
-
-    # Vertical: Transpose of Original image
     image_norms_v = []
-    for chunckV in croped_imgs:
-        image_norms_v.append(amplitude_encode(chunckV.T))
+    is_empty = [False] * 256  # holds a mapping of witch chunks we skipped over due to them being empty
+    for chunk in range(len(croped_imgs)):
+        if np.sum(croped_imgs[chunk]) == 0:
+            # if chunk is empty then set is_empty and don't process it
+            is_empty[chunk] = True
+        else:
+            # get amp encoding for H and V
+            image_norms_h.append(amplitude_encode(croped_imgs[chunk]))
+            image_norms_v.append(amplitude_encode(croped_imgs[chunk].T))
 
+    # Get Vertical chunks: Transpose of Original image
     #todo: print the image_norms v and h here to see
-    print(image_norms_h)
-    print(image_norms_v)
+    #print(image_norms_h)
+    #print(image_norms_v)
 
 
 
     # Initialize some global variable for number of qubits
-    data_qb = 6  # Set to ceil(log_2(image.CropSize)) hardcoded as 8 since image crop is 16x16
+    data_qb = 8  # Set to ceil(log_2(image.CropSize)) hardcoded as 8 since image crop is 16x16
     anc_qb = 1  # This is the auxiliary qbit.
     total_qb = data_qb + anc_qb
 
     # make a circuit for each horizontal and vertical chunk
     circuits_h = []
-    for img in image_norms_h:
-        circuits_h.append(circuit_h(img, total_qb))
-
     circuits_v = []
-    for img in image_norms_v:
-        circuits_v.append(circuit_v(img, total_qb))
+    for i in range(len(image_norms_h)):
+        circuits_h.append(circuit_h(image_norms_h[i], total_qb))
+        circuits_v.append(circuit_v(image_norms_v[i], total_qb))
 
     # combine all circuits into one list
     circuit_list = circuits_h
     circuit_list.extend(circuits_v)
-
-    back = Aer.get_backend('aer_simulator_unitary')
+    # aer_simulator_unitary still attempts a transpile for each circuit
+    # even statevector_simulator backend takes a while to run
+    back = Aer.get_backend('statevector_simulator')
     results = execute(circuit_list, backend=back).result()
 
     counts_h = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
@@ -168,9 +170,9 @@ def sim256x256():
     print(hArray)
 
     # Transfer all known values form experiment results to dic
-    for k, v in result.quasi_dists[0].items():
+    for k, v in results.quasi_dists[0].items():
         counts_h[format(k, f"0{total_qb}b")] = v
-    for k, v in result.quasi_dists[1].items():
+    for k, v in results.quasi_dists[1].items():
         counts_v[format(k, f"0{total_qb}b")] = v
 
     print('Counts for Horizontal scan:')

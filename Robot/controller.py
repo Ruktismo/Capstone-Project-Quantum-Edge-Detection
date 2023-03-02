@@ -1,5 +1,7 @@
+import sys
 import time
 from smbus2 import SMBus
+from decimal import Decimal
 
 # region # =========================== Initialize =========================== #
 # ----- addressing the bus
@@ -149,9 +151,22 @@ def run_right_turn(run_time, speed):
 
 # region # =========================== Default run: testing =========================== #
 def main():
-    # ----- call pre-made test functions
-    test_movement()
-    test_headlights()
+    # ----- parsing arguments
+    function = sys.argv[0].int()
+    run_time = sys.argv[1].int()
+    speed = Decimal(sys.argv[2])
+
+    if function == 0:
+        test_movement()
+        test_headlights()
+    elif function == 1:
+        run_forward(run_time, speed)
+    elif function == 2:
+        run_backwards(run_time, speed)
+    elif function == 3:
+        run_right_turn(run_time, speed)
+    elif function == 4:
+        run_left_turn(run_time, speed)
 
 
 if __name__ == "__main__":

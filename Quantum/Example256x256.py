@@ -1,7 +1,7 @@
 import numpy
 from qiskit import *
 from qiskit.compiler import transpile
-from qiskit.providers.fake_provider.backends.belem.fake_belem import FakeBelemV2
+from qiskit.providers.fake_provider.backends.guadalupe import fake_guadalupe
 from qiskit.visualization import plot_histogram
 from qiskit_ibm_runtime import QiskitRuntimeService, Session, Sampler
 
@@ -165,10 +165,37 @@ def sim256x256():
     # combine all circuits into one list
     circuit_list = circuits_h
     circuit_list.extend(circuits_v)
-    # aer_simulator_unitary still attempts a transpile for each circuit
-    # even statevector_simulator backend takes a while to run
-    back = Aer.get_backend('statevector_simulator')
-    results = execute(circuit_list, backend=back).result()
+
+    # Fake Backend for transpile to decompose circuit to. Locked to Belem for now
+    # Each quantum computer supports different gates, transpile needs to know what gates are available
+    fake_backend = fake_guadalupe()  # TODO: Allow user to set backend so they can run on any quantum computer.
+
+    # Transpile the circuits for optimized execution on the backend
+    # We made the circuits with high-level gates, need to decompose to basic gates so IBMQ hardware can understand
+    for i in range(len(circuits_h)):
+        qc_small_h_t = transpile(circuits_h[i], fake_backend, optimization_level=3)
+        qc_small_v_t = transpile(circuits_v[i], fake_backend, optimization_level=3)
+
+    # Combining both circuits into a list
+    circ_list_t = [qc_small_h_t, qc_small_v_t]
+
+    # Load the IBMQ account. It is not properly loading, but it is saved?
+    # IBMQ.load_account()
+    # Using token from arg[1] since load_account is not working
+    service = QiskitRuntimeService(channel="ibm_quantum", token=TOKEN)
+    # Make a new session with IBM
+    # Set backend to "ibmq_qasm_simulator" for non-quantum results, for quantum results use "ibmq_belem" or other
+    with Session(service=service, backend="ibmq_guadalupe") as session:
+        sampler = Sampler(session=session)  # Make a Sampler to run the circuits
+        # Executing the circuits on the backend
+        job = sampler.run(circ_list_t, shots=8192)
+        # job_monitor(job)  # job_monitor does not work
+        print("\nJob queued, look to IBM website to get time updates.\nDO NOT CLOSE PROGRAM!!!")
+        # Getting the resultant probability distribution after measurement
+        result = job.result()  # Blocking until IBM returns with results
+
+
+
 
     counts_h = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
     counts_v = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
@@ -185,9 +212,9 @@ def sim256x256():
     print(hArray)
 
     # Transfer all known values form experiment results to dic
-    for k, v in results.quasi_dists[0].items():
+    for k, v in result.quasi_dists[0].items():
         counts_h[format(k, f"0{total_qb}b")] = v
-    for k, v in results.quasi_dists[1].items():
+    for k, v in result.quasi_dists[1].items():
         counts_v[format(k, f"0{total_qb}b")] = v
 
     print('Counts for Horizontal scan:')

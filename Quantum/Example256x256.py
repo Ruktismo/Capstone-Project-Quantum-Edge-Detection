@@ -145,11 +145,6 @@ def sim256x256():
             image_norms_v.append(amplitude_encode(croped_imgs[chunk].T))
 
     # Get Vertical chunks: Transpose of Original image
-    #todo: print the image_norms v and h here to see
-    #print(image_norms_h)
-    #print(image_norms_v)
-
-
 
     # Initialize some global variable for number of qubits
     data_qb = 8  # Set to ceil(log_2(image.CropSize)) hardcoded as 8 since image crop is 16x16
@@ -196,48 +191,46 @@ def sim256x256():
         # Getting the resultant probability distribution after measurement
         result = job.result()  # Blocking until IBM returns with results
 
+    results = []
 
+    #for each circuit we have
+    for i in range(len(circ_list_t)):
+        counts = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}  #create binaries
 
+        # Transfer all known values form experiment results to dic
+        for k, v in result.quasi_dists[i].items():
+            counts[format(k, f"0{total_qb}b")] = v
 
-    counts_h = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
-    counts_v = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
+        results.append(counts)
 
-    # Make a zeroed nparray of size chunk for each h and v chunk.
-    hArray = []
-    vArray = []
-    for zeroArrayH in image_norms_h:
-        hArray.append(numpy.zeros((16, 16)))
-
-    for zeroArrayV in image_norms_v:
-        vArray.append(numpy.zeros((16, 16)))
-
-    print(hArray)
-
-    # Transfer all known values form experiment results to dic
-    for k, v in result.quasi_dists[0].items():
-        counts_h[format(k, f"0{total_qb}b")] = v
-    for k, v in result.quasi_dists[1].items():
-        counts_v[format(k, f"0{total_qb}b")] = v
-
-    print('Counts for Horizontal scan:')
-    plot_histogram(counts_h)
-    plt.show()
-
-    print('\n\nCounts for Vertical scan:')
-    plot_histogram(counts_v)
-    plt.show()
-
-    # Map each chunk to its corresponding array.
-
+    edge_scan_small_h = []
+    edge_scan_small_v = []
     # Extract odd numbered states for each chunk. (maybe do it in the mapping above to save time?)
-    edge_scan_small_h = np.array([counts_h[f'{2 * i + 1:03b}'] for i in range(2 ** data_qb)]).reshape(2, 2)
-    edge_scan_small_v = np.array([counts_v[f'{2 * i + 1:03b}'] for i in range(2 ** data_qb)]).reshape(2, 2).T
+    #do for each h circuit
+    for i in range(len(circ_list_t)/2):
+        edge_scan_small_h.append(np.array([results[i][f'{2 * i + 1:03b}'] for i in range(2 ** data_qb)]).reshape(H_SIZE, V_SIZE))
 
+    #do for each v circuit
+    for i in range(len(circ_list_t)/2, len(circ_list_t)):
+        edge_scan_small_v.append(np.array([results[i][f'{2 * i + 1:03b}'] for i in range(2 ** data_qb)]).reshape(H_SIZE, V_SIZE).T)
+
+    edge_detected_image_small = []
     # Add together the H and V of each chunk.
-    edge_detected_image_small = edge_scan_small_h + edge_scan_small_v
+    for i in range(len(edge_scan_small_h)):
+        edge_detected_image_small.append(edge_scan_small_h[i] + edge_scan_small_v[i])
 
 
     # Stitch the chunks back into one image.
+    #first make empty image
+    ed_image = Image.new('BW', (256, 256))
+
+    #loop for upper left box for each chunk
+    for i in range(len(256)):
+
+        #paste 16x16 horz
+        #TODO; paste images
+        ed_image.paste(box= ())
+
 
     # Plot edge detected image.
     plot_image(edge_detected_image_small, 'Full Edge Detected Image')

@@ -69,28 +69,44 @@ def crop(image, hsize, vsize):
 # TODO this ia a copy of the state vector version. need to update to 16x16
 def circuit_h(img, total_qb):
     # Create the circuit for horizontal scan
-    D2n_1 = np.roll(np.identity(2 ** total_qb), 1, axis=1)
-
+    #todo; this is 8x8, update to 16x16
     qc_h = QuantumCircuit(total_qb)
     qc_h.initialize(img, range(1, total_qb))
-
+    qc_h.barrier()
     qc_h.h(0)
-    qc_h.unitary(D2n_1, range(total_qb))
+    qc_h.barrier()
+    qc_h.x(0)
+    qc_h.cx(0, 1)
+    qc_h.ccx(0, 1, 2)
+    qc_h.mcx([0, 1, 2], 3)
+    qc_h.mcx([0, 1, 2, 3], 4)
+    qc_h.mcx([0, 1, 2, 3, 4], 5)
+    qc_h.mcx([0, 1, 2, 3, 4, 5], 6)
+    qc_h.barrier()
     qc_h.h(0)
+    qc_h.measure_all()
 
     return qc_h
 
 
 def circuit_v(img, total_qb):
-    # Create the circuit for horizontal scan
-    D2n_1 = np.roll(np.identity(2 ** total_qb), 1, axis=1)
-
+    # Create the circuit for vertical scan
+    # todo; this is 8x8, update to 16x16
     qc_v = QuantumCircuit(total_qb)
     qc_v.initialize(img, range(1, total_qb))
-
+    qc_v.barrier()
     qc_v.h(0)
-    qc_v.unitary(D2n_1, range(total_qb))
+    qc_v.barrier()
+    qc_v.x(0)
+    qc_v.cx(0, 1)
+    qc_v.ccx(0, 1, 2)
+    qc_v.mcx([0, 1, 2], 3)
+    qc_v.mcx([0, 1, 2, 3], 4)
+    qc_v.mcx([0, 1, 2, 3, 4], 5)
+    qc_v.mcx([0, 1, 2, 3, 4, 5], 6)
+    qc_v.barrier()
     qc_v.h(0)
+    qc_v.measure_all()
 
     return qc_v
 
@@ -109,7 +125,6 @@ def sim256x256():
             image[i].append(image_RGB[i][j][0] / 255.0)
 
     image = np.array(image)
-
     plot_image(image, 'Original Image')
 
     # Then crop the result into chunks

@@ -1,7 +1,8 @@
 import numpy
 from qiskit import *
 from qiskit.compiler import transpile
-from qiskit.providers.fake_provider.backends.guadalupe import fake_guadalupe
+from qiskit.providers.ibmq import IBMQ
+from qiskit.providers.fake_provider.backends.guadalupe.fake_guadalupe import FakeGuadalupeV2
 from qiskit.visualization import plot_histogram
 from qiskit_ibm_runtime import QiskitRuntimeService, Session, Sampler
 
@@ -168,11 +169,12 @@ def sim256x256():
 
     # Fake Backend for transpile to decompose circuit to. Locked to Belem for now
     # Each quantum computer supports different gates, transpile needs to know what gates are available
-    fake_backend = fake_guadalupe()  # TODO: Allow user to set backend so they can run on any quantum computer.
+    fake_backend = FakeGuadalupeV2() # TODO: Allow user to set backend so they can run on any quantum computer.
 
     # Transpile the circuits for optimized execution on the backend
     # We made the circuits with high-level gates, need to decompose to basic gates so IBMQ hardware can understand
     for i in range(len(circuits_h)):
+        print(i)
         qc_small_h_t = transpile(circuits_h[i], fake_backend, optimization_level=3)
         qc_small_v_t = transpile(circuits_v[i], fake_backend, optimization_level=3)
 
@@ -185,7 +187,7 @@ def sim256x256():
     service = QiskitRuntimeService(channel="ibm_quantum", token=TOKEN)
     # Make a new session with IBM
     # Set backend to "ibmq_qasm_simulator" for non-quantum results, for quantum results use "ibmq_belem" or other
-    with Session(service=service, backend="ibmq_guadalupe") as session:
+    with Session(service=service, backend="ibmq_qasm_simulator") as session:
         sampler = Sampler(session=session)  # Make a Sampler to run the circuits
         # Executing the circuits on the backend
         job = sampler.run(circ_list_t, shots=8192)

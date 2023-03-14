@@ -3,18 +3,24 @@
 from qiskit import *
 from qiskit import IBMQ
 from qiskit.compiler import transpile
-from qiskit.providers.fake_provider.backends.belem.fake_belem import FakeBelemV2
+from qiskit.providers.fake_provider.backends.belem.fake_belem import FakeBelemV2 # for 2x2
+from qiskit.providers.fake_provider.backends.guadalupe.fake_guadalupe import FakeGuadalupeV2 # for 16x16
 from qiskit.visualization import *
 from qiskit_ibm_runtime import QiskitRuntimeService, Session, Sampler
 from qiskit.visualization import plot_histogram
 
 import sys
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import style
 
 # error check for cmd args
-
+try:
+    TOKEN = sys.argv[1]
+except IndexError:
+    print(f"ERROR: INCORRECT NUMBER OF ARGS\nExpected: [Token,H-Size,V-Size]\nGot: {sys.argv}")
+    exit()
 
 # Function for plotting the image using matplotlib
 def plot_image(img, title: str):
@@ -65,8 +71,9 @@ def local16x16():
                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-    #plot_image(image, 'Original 16x16 Image')
 
+    #plot_image(image, 'Original 16x16 Image')
+    tic = time.perf_counter()
     # Get amplitude encoded pixel values
     image_norm_h = amplitude_encode(image)
     image_norm_v = amplitude_encode(image.T)  # Image transpose
@@ -76,46 +83,83 @@ def local16x16():
     anc_qb = 1  # Aux qbit
     total_qb = data_qb + anc_qb
 
-    # Amplitude permutation unitary
-    D2n_1 = np.roll(np.identity(2 ** total_qb), 1, axis=1)
-
     # Create the circuit for horizontal scan
     qc_h = QuantumCircuit(total_qb)
     qc_h.initialize(image_norm_h, range(1, total_qb))
+    qc_h.barrier()
     qc_h.h(0)
-    qc_h.unitary(D2n_1, range(total_qb))
+    qc_h.barrier()
+    # Decrement gate - START
+    qc_h.x(0)
+    qc_h.cx(0, 1)
+    qc_h.ccx(0, 1, 2)
+    for c in range(3, total_qb):
+        qc_h.mcx([b for b in range(c)], c)
+    # Decrement gate - END
+    qc_h.barrier()
     qc_h.h(0)
+    qc_h.measure_all()
+
 
     # Create the circuit for vertical scan
     qc_v = QuantumCircuit(total_qb)
     qc_v.initialize(image_norm_v, range(1, total_qb))
+    qc_v.barrier()
     qc_v.h(0)
-    qc_v.unitary(D2n_1, range(total_qb))
+    qc_v.barrier()
+    # Decrement gate - START
+    qc_v.x(0)
+    qc_v.cx(0, 1)
+    qc_v.ccx(0, 1, 2)
+    for c in range(3, total_qb):
+        qc_v.mcx([b for b in range(c)], c)
+    # Decrement gate - END
+    qc_v.barrier()
     qc_v.h(0)
+    qc_v.measure_all()
+
 
     # Combine both circuits into a single list
     circ_list = [qc_h, qc_v]
 
-    # Simulating the cirucits
-    back = Aer.get_backend('statevector_simulator')
-    results = execute(circ_list, backend=back).result()
-    sv_h = results.get_statevector(qc_h)
-    sv_v = results.get_statevector(qc_v)
+    fake_backend = FakeGuadalupeV2()
 
-    threshold = lambda amp: (amp > 1e-15 or amp < -1e-15)
+    # Transpile the circuits for optimized execution on the backend
+    # We made the circuits with high-level gates, need to decompose to basic gates so IBMQ hardware can understand
+    qc_small_h_t = transpile(qc_h, fake_backend, optimization_level=3)
+    qc_small_v_t = transpile(qc_v, fake_backend, optimization_level=3)
 
-    edge_scan_h = np.abs(np.array([1 if threshold(sv_h[2 * i + 1].real) else 0 for i in range(2 ** data_qb)])).reshape(
-        16, 16)
-    edge_scan_v = np.abs(np.array([1 if threshold(sv_v[2 * i + 1].real) else 0 for i in range(2 ** data_qb)])).reshape(
-        16,
-        16).T
+    # Combining both circuits into a list
+    circ_list_t = [qc_small_h_t, qc_small_v_t]
+
+    tok = time.perf_counter()
+    t = tok - tic
+    print(f"Total Compile Time: {t:0.4f} seconds")
+
+    service = QiskitRuntimeService(channel="ibm_quantum", token=TOKEN)
+    # Set backend to "ibmq_qasm_simulator" for non-quantum results, for quantum results use "ibmq_belem" or other
+    with Session(service=service, backend="ibmq_qasm_simulator") as session:
+        sampler = Sampler(session=session)
+        job = sampler.run(circ_list_t, shots=8192)
+        print("\nJob queued, look to IBM website to get time updates.\nDO NOT CLOSE PROGRAM!!!")
+        # Getting the resultant probability distribution after measurement
+        result = job.result()  # Blocking until IBM returns with results
 
 
-    #plot_image(edge_scan_h, 'Horizontal scan output')
-    #plot_image(edge_scan_v, 'Vertical scan output')
+    counts_h = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
+    counts_v = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
 
-    # Combining the horizontal and vertical component of the result
-    edge_scan_sim = edge_scan_h | edge_scan_v
+    for k, v in result.quasi_dists[0].items():
+        counts_h[format(k, f"0{total_qb}b")] = v
+    for k, v in result.quasi_dists[1].items():
+        counts_v[format(k, f"0{total_qb}b")] = v
+
+
+    # Extracting counts for odd-numbered states. i.e. data that we are interested in
+    edge_scan_h = np.array([counts_h[f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)]).reshape(16, 16)
+    edge_scan_v = np.array([counts_v[f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)]).reshape(16, 16).T
+
+    edge_scan_sim = edge_scan_h + edge_scan_v
 
     #combine all images
     #create base
@@ -138,12 +182,6 @@ def local16x16():
 
     #Show/Display
     plt.show()
-
-
-    # Plotting the original and edge-detected images
-    #plot_image(image, 'Original image')
-    #plot_image(edge_scan_sim, 'Edge Detected image')
-
 
 
 """
@@ -268,12 +306,6 @@ def hardware2x2():
     # Plotting the image_small using matplotlib
     plot_image(image_small, 'Cropped image')
 
-    # TO DO: amplitude, code (v and h) (then can scale)
-    # use amplitude_encode (encode is circular; example in qiskit) (normalize around circle)
-    # after QuantumCircuit (below),
-    # . on line 169ish;
-
-    # take a look at qiskit; amplitude encoding
     # Get the amplitude ancoded pixel values
     # Horizontal: Original image
     image_norm_h = amplitude_encode(image_small)
@@ -288,7 +320,6 @@ def hardware2x2():
 
     # Create the circuit for horizontal scan
     qc_small_h = QuantumCircuit(total_qb)
-    # TODO: qc_small_h INITIALIZE (with the horz and vert into range)
     qc_small_h.initialize(image_norm_h, range(1, total_qb))
     qc_small_h.x(1)  # apply XGate to qbit 1
     qc_small_h.h(0)  # apply hadamard gate to qbit 0

@@ -193,7 +193,8 @@ def sim256x256():
 
     # Then crop the result into chunks
     croped_imgs = crop(image, H_SIZE, V_SIZE)
-    #plot_chunks(croped_imgs)
+    # plot_chunks(croped_imgs)
+
 
 #Pre-Processing Start
     is_empty = [None] * len(croped_imgs)
@@ -221,6 +222,7 @@ def sim256x256():
     print(f"Circ h:{len(circ_list_t_h)}")
     print(f"Circ v:{len(circ_list_t_v)}")
     print(f"Nones:{len([e for e in is_empty if e])}") # Count how many where not processed
+    print(f"Nones List: {is_empty}")
     tok = time.perf_counter()
     t = tok - tic
     print(f"Total Time: {t:0.4f} seconds")
@@ -256,7 +258,7 @@ def sim256x256():
 
         # Transfer all known values form experiment results to dic
         for k, v in result_h.quasi_dists[i].items():
-            counts[format(k, f"0{total_qb}b")] = v
+            counts[format(k, f"0{total_qb}b")] = v * 255  # And convert from probability to color int between 0-255
 
         results_h.append(counts)
 
@@ -266,7 +268,7 @@ def sim256x256():
 
         # Transfer all known values form experiment results to dic
         for k, v in result_v.quasi_dists[i].items():
-            counts[format(k, f"0{total_qb}b")] = v
+            counts[format(k, f"0{total_qb}b")] = v * 255  # And convert from probability to color int between 0-255
 
         results_v.append(counts)
 
@@ -289,8 +291,8 @@ def sim256x256():
 
 
     # Stitch the chunks back into one image.
-    #first make empty image
-    ed_image = Image.new('L', (256, 256))
+    # first make empty image
+    ed_image = Image.new('L', (256, 256))  # L mode is int between 0-255
     ed_image_chunks = []
     res = 0 # index of curr result
     #loop for upper left box for each chunk

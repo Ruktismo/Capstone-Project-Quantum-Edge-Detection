@@ -6,3 +6,6 @@
 - Michael Del Regno
 - Kenneth Wang
 - Zaid Buni
+
+https://github.com/jacksonliam/mjpg-streamer
+This was used to get camera output

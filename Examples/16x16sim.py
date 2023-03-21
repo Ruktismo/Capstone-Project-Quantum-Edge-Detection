@@ -155,10 +155,13 @@ def local16x16():
         # Getting the resultant probability distribution after measurement
         result = job.result()  # Blocking until IBM returns with results
 
-
+    # Make dic with keys that are binaries from 0 to 2^total_qb. with values of 0.0 to start.
+    # This is done since IBM will not return Qbit configs that are 0. So we need to map the results to the full space
+    # Formatted String: 0 (for padding zeros) {total_qb} (for bit-string size) b (to format from int to binary)
     counts_h = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
     counts_v = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
 
+    # Transfer all known values form experiment results to dic
     for k, v in result.quasi_dists[0].items():
         counts_h[format(k, f"0{total_qb}b")] = v
     for k, v in result.quasi_dists[1].items():
@@ -169,6 +172,7 @@ def local16x16():
     edge_scan_h = np.array([counts_h[f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)]).reshape(16, 16)  #horizontal
     edge_scan_v = np.array([counts_v[f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)]).reshape(16, 16).T  #transpose for vertical
 
+    # Combine H and V scans to get full edge detection image
     edge_scan_sim = edge_scan_h + edge_scan_v
 
     #combine all images

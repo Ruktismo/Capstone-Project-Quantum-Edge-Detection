@@ -8,17 +8,17 @@ from qiskit.visualization import plot_histogram
 
 #standard libraries needed
 import sys
-import time
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import style
 
 #error check for command args being passed in
+#TOKEN will be IBM quantum account API token
+#be sure to copy from clipboard (NOT the keyboard shortcut)
 try:
     TOKEN = sys.argv[1]
 except IndexError:
     print(f"ERROR: INCORRECT NUMBER OF ARGS")
-    print(f"Expected: [Token,H-Size,V-Size]\nGot: {sys.argv}")
+    print(f"Expected: [Token]\nGot: {sys.argv}")
     exit()
 
 # Function for plotting the image using matplotlib
@@ -68,7 +68,7 @@ def hardware2x2():
     # Plotting the image_small using matplotlib
     plot_image(image_small, 'Cropped image')
 
-    # Get the amplitude ancoded pixel values
+    # Get the amplitude encoded pixel values
     # Horizontal: Original image
     image_norm_h = amplitude_encode(image_small)
 
@@ -115,7 +115,7 @@ def hardware2x2():
     plt.show()
 
     # Combine both circuits into a single list
-    circ_list = [qc_small_h, qc_small_v]
+    #circ_list = [qc_small_h, qc_small_v]  #this is not used but keeping here if need in future
 
     # Fake Backend for transpile to decompose circuit to. Locked to Belem for now
     # Each quantum computer supports different gates, transpile needs to know what gates are available

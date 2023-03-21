@@ -1,22 +1,22 @@
-import numpy
-import qiskit.circuit
+#Qiskit libraries needed
 from qiskit import *
 from qiskit.compiler import transpile
-from qiskit.providers.ibmq import IBMQ
 from qiskit.providers.fake_provider.backends.guadalupe.fake_guadalupe import FakeGuadalupeV2
-from qiskit.visualization import plot_histogram
 from qiskit_ibm_runtime import QiskitRuntimeService, Session, Sampler
 
+#import standard libraries
 import sys
 import time
-import math
 import random as ran
-from multiprocessing import Pool
 import numpy as np
-from PIL import Image
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
+from PIL import Image
 from matplotlib import style
 
+
+#TOKEN will be IBM quantum account API token
+#be sure to copy from clipboard (NOT the keyboard shortcut)
 try:
     TOKEN = sys.argv[1]
     H_SIZE = int(sys.argv[2])
@@ -31,8 +31,8 @@ except ValueError:
 
 # Initialize global variable for number of qubits
 data_qb = 8  # Set to ceil(log_2(image.CropSize)) hardcoded as 8 since image crop is 16x16
-anc_qb = 1  # This is the auxiliary qbit.
-total_qb = data_qb + anc_qb
+anc_qb = 1  # This is the auxiliary qubit.
+total_qb = data_qb + anc_qb  #total qubits
 
 # Function for plotting the image using matplotlib
 def plot_image(img, title: str):
@@ -45,9 +45,11 @@ def plot_image(img, title: str):
     plt.show()
 
 
+#Function to plot each chunk of the 256x256 image
 def plot_chunks(chunks):
     fig, axs = plt.subplots(256//H_SIZE,256//V_SIZE)
     index = 0
+    #loop through each vertical and each horizontal
     for v in range(256//V_SIZE):
         for h in range(256//H_SIZE):
             # plot chunk
@@ -66,6 +68,7 @@ def plot_chunks(chunks):
 def amplitude_encode(img_data):
     # Calculate the RMS value
     rms = np.sqrt(np.sum(img_data ** 2))  # sum up all pixels to get total
+
     # if img has non-zero pixels
     if rms != 0:
         # Create normalized image
@@ -80,21 +83,25 @@ def amplitude_encode(img_data):
     ret = np.array(image_norm)
     return ret
 
-
+#Function to crop the image
 def crop(image, hsize, vsize):
     h_chunks = image.shape[0] / hsize
     v_chunks = image.shape[1] / vsize
+
     # quick error check for hsplit and vsplit
     if (image.shape[0] % hsize != 0) or (image.shape[1] % vsize != 0):
         print("ERROR\nImage is not cleanly dividable by chunk size.")
         exit()
+
     # Split the image vertically then pump all vertical slices into hsplit to get square chunks
     nested_chunks = [np.hsplit(vs, h_chunks) for vs in np.vsplit(image, v_chunks)]
+
     # The split process leaves us with the chunks in a nested array, flatten to a list
     img_chunks = [item for sublist in nested_chunks for item in sublist]
+
     return img_chunks
 
-
+#Function for horizontal circuit; used one of glen's files for reference then adjusted
 def circuit_h(img):
     # Create the circuit for horizontal scan
     qc_h = QuantumCircuit(total_qb)
@@ -115,7 +122,7 @@ def circuit_h(img):
 
     return qc_h
 
-
+#Function for vertical circuit; used one of glen's files for reference then adjusted
 def circuit_v(img):
     # Create the circuit for vertical scan
     qc_v = QuantumCircuit(total_qb)
@@ -136,11 +143,11 @@ def circuit_v(img):
 
     return qc_v
 
-
+#Pre-processing for each chunk
 def pre_processing(data: (np.array, int)):
     # Get amplitude encoding of chunks for both H and V
     if np.sum(data[0]) == 0:
-        # if chunk is empty then don't process it
+        # if chunk is empty then don't need to process it
         return None, None, data[1]
     else:
         # get amp encoding for H and V
@@ -178,7 +185,7 @@ def pre_processing(data: (np.array, int)):
 def sim256x256():
     style.use('bmh')  # This is setting the color scheme for the plots.
     pic = Image.open("./edge_detection_input.jpg")  # open image and crop to 256x256
-    image_RGB = numpy.asarray(pic)
+    image_RGB = np.asarray(pic)
 
     # The image is in RGB, but we only need one BW
     # Convert the RBG component of the image to B&W image, as a numpy (uint8) array
@@ -239,20 +246,23 @@ def sim256x256():
         sampler_h = Sampler(session=session)  # Make a Sampler to run the circuits
         # Executing the circuits on the backend
         job_h = sampler_h.run(circ_list_t_h, shots=8192)
-
         sampler_v = Sampler(session=session)  # Make a Sampler to run the circuits
+
         # Executing the circuits on the backend
         job_v = sampler_v.run(circ_list_t_v, shots=8192)
 
         print("\nJob queued, look to IBM website to get time updates.\nDO NOT CLOSE PROGRAM!!!")
+
         # Getting the resultant probability distribution after measurement
         result_h = job_h.result()  # Blocking until IBM returns with results
         result_v = job_v.result()
 
     results_h = []
     results_v = []
+
 #TODO combine from here to MARK into one loop
     #for each circuit we have
+    #for each horizontal
     for i in range(len(circ_list_t_h)):
         counts = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}  #create binaries
 
@@ -262,7 +272,7 @@ def sim256x256():
 
         results_h.append(counts)
 
-
+    #for each vertical
     for i in range(len(circ_list_t_h)):
         counts = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}  #create binaries
 
@@ -272,17 +282,19 @@ def sim256x256():
 
         results_v.append(counts)
 
-
+    #initialize empty lists for the edge scans
     edge_scan_h = []
     edge_scan_v = []
+
     # Extract odd numbered states for each chunk. (maybe do it in the mapping above to save time?)
     #do for each h circuit
     for rh in range(len(results_h)):
         edge_scan_h.append(np.array([results_h[rh][f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)]).reshape(H_SIZE, V_SIZE))
 
-    #do for each v circuit
+    #do for each v circuit (h, but transpose it)
     for rv in range(len(results_v)):
         edge_scan_v.append(np.array([results_v[rv][f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)]).reshape(H_SIZE, V_SIZE).T)
+
 #MARK
     edge_detected_image = []
     # Add together the H and V of each chunk.
@@ -294,7 +306,9 @@ def sim256x256():
     # first make empty image
     ed_image = Image.new('L', (256, 256))  # L mode is int between 0-255
     ed_image_chunks = []
-    res = 0 # index of curr result
+    res = 0 # index of current result
+
+
     #loop for upper left box for each chunk
     for i in range(len(is_empty)):
         # if there was data that was processed
@@ -307,16 +321,23 @@ def sim256x256():
         # If not then leave as default black
         else:
             ed_image_chunks.append(np.zeros((16,16)))
+
+
     # don't know if this works, if it does then remove try/catch
     try:
         plot_chunks(ed_image_chunks)
     except Exception:
         print(len(ed_image_chunks))
+
     # Plot edge detected image.
     plot_image(np.array(ed_image), 'Full Edge Detected Image')
 
+# MAIN
 def main():
+    print('*************************************************')
     print("Running 256x256 sim.")
+    print('*************************************************')
+
     sim256x256()
 
 if __name__ == "__main__":

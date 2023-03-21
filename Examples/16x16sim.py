@@ -13,11 +13,13 @@ import matplotlib.pyplot as plt
 from matplotlib import style
 
 #error check for command args being passed in
+#TOKEN will be IBM quantum account API token
+#be sure to copy from clipboard (NOT the keyboard shortcut)
 try:
     TOKEN = sys.argv[1]
 except IndexError:
     print(f"ERROR: INCORRECT NUMBER OF ARGS")
-    print(f"Expected: [Token,H-Size,V-Size]\nGot: {sys.argv}")
+    print(f"Expected: [Token]\nGot: {sys.argv}")
     exit()
 
 # Function for plotting the image using matplotlib
@@ -127,7 +129,6 @@ def local16x16():
     # Combine both circuits into a single list
     circ_list = [qc_h, qc_v]
 
-
     fake_backend = FakeGuadalupeV2()
 
     # Transpile the circuits for optimized execution on the backend
@@ -165,26 +166,26 @@ def local16x16():
 
 
     # Extracting counts for odd-numbered states. i.e. data that we are interested in
-    edge_scan_h = np.array([counts_h[f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)]).reshape(16, 16)
-    edge_scan_v = np.array([counts_v[f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)]).reshape(16, 16).T
+    edge_scan_h = np.array([counts_h[f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)]).reshape(16, 16)  #horizontal
+    edge_scan_v = np.array([counts_v[f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)]).reshape(16, 16).T  #transpose for vertical
 
     edge_scan_sim = edge_scan_h + edge_scan_v
 
     #combine all images
-    #create base
+    ## create 2x2 base to fit 1 image in each quadrant
     fig, imageAxis = plt.subplots(2, 2)
 
-    #display each image
-    imageAxis[0, 0].imshow(image)
-    imageAxis[0, 1].imshow(edge_scan_h)
-    imageAxis[1, 0].imshow(edge_scan_v)
-    imageAxis[1, 1].imshow(edge_scan_sim)
+    #display each image on the axis
+    imageAxis[0, 0].imshow(image) #top left
+    imageAxis[0, 1].imshow(edge_scan_h)  #top right
+    imageAxis[1, 0].imshow(edge_scan_v)  #bottom left
+    imageAxis[1, 1].imshow(edge_scan_sim)  #bottom right
 
     #display titles for subplots
-    imageAxis[0, 0].set_title('Original')
-    imageAxis[0, 1].set_title('Horizontal Scan')
-    imageAxis[1, 0].set_title('Vertical Scan')
-    imageAxis[1, 1].set_title('Edge Detected Image')
+    imageAxis[0, 0].set_title('Original')  #top left
+    imageAxis[0, 1].set_title('Horizontal Scan')  #top right
+    imageAxis[1, 0].set_title('Vertical Scan')  #bottom left
+    imageAxis[1, 1].set_title('Edge Detected Image')  #bottom right
 
     #adjust the spacing between images
     plt.subplots_adjust(hspace = 0.5, wspace = 0.75)
@@ -192,6 +193,7 @@ def local16x16():
     #Show/Display
     plt.show()
 
+# MAIN
 def main():
     print('*************************************************')
     print('running local 16x16 simulation...')

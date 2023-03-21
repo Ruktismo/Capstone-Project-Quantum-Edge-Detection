@@ -1,23 +1,14 @@
 # Importing standard Qiskit libraries and configuring account
-# Libs needed: qiskit, matplotlib, pylatexenc, qiskit-ibm-runtime
 from qiskit import *
 
 #standard libraries needed
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import style
 
-#error check for command args being passed in
-try:
-    TOKEN = sys.argv[1]
-except IndexError:
-    print(f"ERROR: INCORRECT NUMBER OF ARGS")
-    print(f"Expected: [Token,H-Size,V-Size]\nGot: {sys.argv}")
-    exit()
-
 # Function for plotting the image using matplotlib
 # parameters: image and title
+
 def plot_image(img, title: str):
     plt.title(title)    #display the string title on the image
     plt.xticks(range(img.shape[0])) #display ticks on x axis
@@ -46,9 +37,6 @@ def amplitude_encode(img_data):
     return np.array(image_norm)
 
 
-
-
-
 """
 8x8 example made from Quskit docs:
     https://qiskit.org/textbook/ch-applications/quantum-edge-detection.html#Quantum-Probability-Image-Encoding-(QPIE)
@@ -58,7 +46,7 @@ Had to change a few things to get it working on local python since jupyter has s
 def local8x8():
     style.use('bmh')  # This is setting the color scheme for the plots.
 
-    # A 8x8 binary image represented as a numpy array
+    #A 8x8 binary image represented as a numpy array
     image = np.array([[0, 0, 0, 0, 0, 0, 0, 0],
                       [0, 1, 1, 1, 1, 1, 0, 0],
                       [0, 1, 1, 1, 1, 1, 1, 0],
@@ -68,7 +56,7 @@ def local8x8():
                       [0, 0, 0, 1, 1, 1, 1, 0],
                       [0, 0, 0, 0, 0, 0, 0, 0]])
 
-    # Get the amplitude ancoded pixel values
+    # Get the amplitude encoded pixel values
     # Horizontal: Original image
     image_norm_h = amplitude_encode(image)
 
@@ -109,6 +97,7 @@ def local8x8():
     circ_list = [qc_h, qc_v]
 
     # Simulating the circuits
+    # state vector simulator; since this is running locally
     back = Aer.get_backend('statevector_simulator')  # Get async background process to run sim
     results = execute(circ_list, backend=back).result()  # Run circuits on backend. Block to get results
     sv_h = results.get_statevector(qc_h)
@@ -120,7 +109,7 @@ def local8x8():
     # This can be helpful for smoothing out quantum randomness.
     threshold = lambda amp: (amp > 1e-15 or amp < -1e-15)  # Take with caution can destroy/muddle data if set wrong.
 
-    # Selecting odd states from the raw statevector and reshaping column vector of size 64 to an 8x8 matrix
+    # Selecting odd states from the raw state vector and reshaping column vector of size 64 to a 8x8 matrix
     edge_scan_h = np.abs(np.array([1 if threshold(sv_h[2 * i + 1].real) else 0 for i in range(2 ** data_qb)])).reshape(
         8, 8)
     edge_scan_v = np.abs(np.array([1 if threshold(sv_v[2 * i + 1].real) else 0 for i in range(2 ** data_qb)])).reshape(
@@ -129,29 +118,30 @@ def local8x8():
     # Combining the horizontal and vertical component of the result
     edge_scan_sim = edge_scan_h | edge_scan_v
 
-    #combine all images
-    #create base
+    # output all images onto one display
+    # create 2x2 base to fit 1 image in each quadrant
     fig, imageAxis = plt.subplots(2, 2)
 
-    #display each image
-    imageAxis[0, 0].imshow(image)
-    imageAxis[0, 1].imshow(edge_scan_h)
-    imageAxis[1, 0].imshow(edge_scan_v)
-    imageAxis[1, 1].imshow(edge_scan_sim)
+    # display each image on the axis
+    imageAxis[0, 0].imshow(image) #top left
+    imageAxis[0, 1].imshow(edge_scan_h)  #top right
+    imageAxis[1, 0].imshow(edge_scan_v)  #bottom left
+    imageAxis[1, 1].imshow(edge_scan_sim)  #bottom right
 
-    #display titles for subplots
-    imageAxis[0, 0].set_title('Original')
-    imageAxis[0, 1].set_title('Horizontal Scan')
-    imageAxis[1, 0].set_title('Vertical Scan')
-    imageAxis[1, 1].set_title('Edge Detected Image')
+    # display titles for subplots
+    imageAxis[0, 0].set_title('Original')  #top left
+    imageAxis[0, 1].set_title('Horizontal Scan')  #top right
+    imageAxis[1, 0].set_title('Vertical Scan')  #bottom left
+    imageAxis[1, 1].set_title('Edge Detected Image')  #bottom right
 
-    #adjust the spacing between images
+    # adjust the spacing between images
     plt.subplots_adjust(hspace = 0.5, wspace = 0.75)
 
-    #Show/Display
+    # Show/Display
     plt.show()
 
 
+# MAIN
 def main():
     print('*************************************************')
     print('running local 8x8 simulation...')

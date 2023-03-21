@@ -1,5 +1,5 @@
 # Importing standard Qiskit libraries and configuring account
-# Libs needed qiskit, matplotlib, pylatexenc, qiskit-ibm-runtime
+# Libs needed: qiskit, matplotlib, pylatexenc, qiskit-ibm-runtime
 from qiskit import *
 from qiskit import IBMQ
 from qiskit.compiler import transpile
@@ -9,26 +9,29 @@ from qiskit.visualization import *
 from qiskit_ibm_runtime import QiskitRuntimeService, Session, Sampler
 from qiskit.visualization import plot_histogram
 
+#standard libraries needed
 import sys
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import style
 
-# error check for cmd args
+#error check for command args being passed in
 try:
     TOKEN = sys.argv[1]
 except IndexError:
-    print(f"ERROR: INCORRECT NUMBER OF ARGS\nExpected: [Token,H-Size,V-Size]\nGot: {sys.argv}")
+    print(f"ERROR: INCORRECT NUMBER OF ARGS")
+    print(f"Expected: [Token,H-Size,V-Size]\nGot: {sys.argv}")
     exit()
 
 # Function for plotting the image using matplotlib
+# parameters: image and title
 def plot_image(img, title: str):
-    plt.title(title)
-    plt.xticks(range(img.shape[0]))
-    plt.yticks(range(img.shape[1]))
+    plt.title(title)    #display the string title on the image
+    plt.xticks(range(img.shape[0])) #display ticks on x axis
+    plt.yticks(range(img.shape[1])) #display ticks on y axis
 
-    # NOTE TO SELF; LOOK INTO IMSHOW AND WHAT IT RETURNS; NEW FUNCT FOR VISUAL?
+    #.imshow is built in function of plot library
     plt.imshow(img, extent=[0, img.shape[0], img.shape[1], 0], cmap='viridis')
     # A blocking request to display the figure(s) loaded. Block ends when user closes figure(s)
     # Will show glitchy overlap if mutable figures are made before show is called
@@ -51,10 +54,12 @@ def amplitude_encode(img_data):
     return np.array(image_norm)
 
 
+# 16x16 image simulation
 def local16x16():
     style.use('bmh')  # color scheme
 
-    # A 16x16 binary image represented as a numpy array
+    # hardcoded 16x16 binary image represented as a numpy array. 0 will be dark/off, 1 will be light/on
+    # this particular one sort of looks like a smiley face :)
     image = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                       [0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0],
@@ -72,23 +77,24 @@ def local16x16():
                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
 
-    #plot_image(image, 'Original 16x16 Image')
     tic = time.perf_counter()
-    # Get amplitude encoded pixel values
+    # Get horizontal and vertical amplitudes encoded pixel values
     image_norm_h = amplitude_encode(image)
-    image_norm_v = amplitude_encode(image.T)  # Image transpose
+    image_norm_v = amplitude_encode(image.T)  # Image transpose for the vertical
 
     # n = log2 N
+    # for qubits
     data_qb = 8
     anc_qb = 1  # Aux qbit
     total_qb = data_qb + anc_qb
 
-    # Create the circuit for horizontal scan
+    # Create the circuit for horizontal scan; built-in functions
     qc_h = QuantumCircuit(total_qb)
     qc_h.initialize(image_norm_h, range(1, total_qb))
     qc_h.barrier()
     qc_h.h(0)
     qc_h.barrier()
+
     # Decrement gate - START
     qc_h.x(0)
     qc_h.cx(0, 1)
@@ -96,17 +102,19 @@ def local16x16():
     for c in range(3, total_qb):
         qc_h.mcx([b for b in range(c)], c)
     # Decrement gate - END
+
     qc_h.barrier()
     qc_h.h(0)
     qc_h.measure_all()
 
 
-    # Create the circuit for vertical scan
+    # Create the circuit for vertical scan; built in functions
     qc_v = QuantumCircuit(total_qb)
     qc_v.initialize(image_norm_v, range(1, total_qb))
     qc_v.barrier()
     qc_v.h(0)
     qc_v.barrier()
+
     # Decrement gate - START
     qc_v.x(0)
     qc_v.cx(0, 1)
@@ -114,6 +122,7 @@ def local16x16():
     for c in range(3, total_qb):
         qc_v.mcx([b for b in range(c)], c)
     # Decrement gate - END
+
     qc_v.barrier()
     qc_v.h(0)
     qc_v.measure_all()
@@ -121,6 +130,7 @@ def local16x16():
 
     # Combine both circuits into a single list
     circ_list = [qc_h, qc_v]
+
 
     fake_backend = FakeGuadalupeV2()
 
@@ -132,10 +142,13 @@ def local16x16():
     # Combining both circuits into a list
     circ_list_t = [qc_small_h_t, qc_small_v_t]
 
+    #to calculate compilation time then output to console
     tok = time.perf_counter()
     t = tok - tic
     print(f"Total Compile Time: {t:0.4f} seconds")
 
+    #connect to simulator
+    #using QASM_SIMULATOR
     service = QiskitRuntimeService(channel="ibm_quantum", token=TOKEN)
     # Set backend to "ibmq_qasm_simulator" for non-quantum results, for quantum results use "ibmq_belem" or other
     with Session(service=service, backend="ibmq_qasm_simulator") as session:
@@ -422,14 +435,18 @@ def hardware2x2():
 
 
 def main():
+    #get input from user for selection
     sim_choice = int(input("1) 8x8 local\n"
                            "2) 16x16 local\n"
                            "3) 2x2 real-hardware\n"
                             "\nWhat simulation to run?\t"))
+    #run 8x8 if 1
     if sim_choice == 1:
         local8x8()
+    #run 16x16 if 2
     elif sim_choice == 2:
         local16x16()
+    #run 2x2 hardware if 3
     elif sim_choice == 3:
         input("\nNote: Running on real hardware takes a long queue time, hours long depending on availability."
               "\nIf you want to end the experiment you have to go to the IBM website and cancel the job."

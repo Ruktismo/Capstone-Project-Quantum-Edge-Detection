@@ -13,6 +13,7 @@ total_qb = data_qb + anc_qb
 
 H_SIZE = 16
 V_SIZE = 16
+IMG_shape = 256
 style.use('bmh')
 def plot_image(img, title: str):
     plt.title(title)
@@ -50,10 +51,10 @@ for i in range(243):
 
     # Transfer all known values form experiment results to dic
     for k, v in result_h[i].items():
-        counts_h[k] = v * 255  # And convert from probability to color int between 0-255
+        counts_h[format(k, f"0{total_qb}b")] = v * 255  # And convert from probability to color int between 0-255
 
     for k, v in result_v[i].items():
-        counts_v[k] = v * 255
+        counts_v[format(k, f"0{total_qb}b")] = v * 255
 
     # Extract odd numbered states for each chunk. (maybe do it in the mapping above to save time?)
     edge_scan_h = np.array(
@@ -80,7 +81,7 @@ for i in range(len(is_empty)):
     # if there was data that was processed
     if not is_empty[i]:
         # paste it in to the image
-        ULBox = (i//16*16, (i*16)%256)#((i*16)%256, i//16*16)  # find upper left cords of chunk based off of chunk index
+        ULBox = (i//H_SIZE*H_SIZE, (i*V_SIZE)%IMG_shape)#((i*16)%256, i//16*16)  # find upper left cords of chunk based off of chunk index
         ed_image_arr[ULBox[0]:ULBox[0]+16, ULBox[1]:ULBox[1]+16] += edge_detected_image[res]
         #ed_image.paste(Image.fromarray(edge_detected_image[res], mode='L'), box=ULBox)  # paste 16x16 chunk
         ed_image_chunks.append(edge_detected_image[res])

@@ -267,50 +267,29 @@ def sim256x256():
         result_h = job_h.result()  # Blocking until IBM returns with results
         result_v = job_v.result()
 
-    results_h = []
-    results_v = []
-
-#TODO combine from here to MARK into one loop
-    #for each circuit we have
-    #for each horizontal
-    for i in range(len(circ_list_t_h)):
-        counts = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}  #create binaries
-
-        # Transfer all known values form experiment results to dic
-        for k, v in result_h.quasi_dists[i].items():
-            counts[format(k, f"0{total_qb}b")] = v * 255  # And convert from probability to color int between 0-255
-
-        results_h.append(counts)
-
-    #for each vertical
-    for i in range(len(circ_list_t_h)):
-        counts = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}  #create binaries
-
-        # Transfer all known values form experiment results to dic
-        for k, v in result_v.quasi_dists[i].items():
-            counts[format(k, f"0{total_qb}b")] = v * 255  # And convert from probability to color int between 0-255
-
-        results_v.append(counts)
-
-    #initialize empty lists for the edge scans
-    edge_scan_h = []
-    edge_scan_v = []
-
-    # Extract odd numbered states for each chunk. (maybe do it in the mapping above to save time?)
-    #do for each h circuit
-    for rh in range(len(results_h)):
-        edge_scan_h.append(np.array([results_h[rh][f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)]).reshape(H_SIZE, V_SIZE))
-
-    #do for each v circuit (h, but transpose it)
-    for rv in range(len(results_v)):
-        edge_scan_v.append(np.array([results_v[rv][f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)]).reshape(H_SIZE, V_SIZE).T)
-
-#MARK
     edge_detected_image = []
-    # Add together the H and V of each chunk.
-    for i in range(len(edge_scan_h)):
-        edge_detected_image.append(edge_scan_h[i] + edge_scan_v[i])
+    # for each pair of H and V circuits we have
+    for i in range(len(circ_list_t_h)):
+        counts_h = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}  # create binaries
+        counts_v = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
 
+        # Transfer all known values form experiment results to dic
+        for k, v in result_h[i].items():
+            counts_h[format(k, f"0{total_qb}b")] = v * 255  # And convert from probability to color int between 0-255
+
+        for k, v in result_v[i].items():
+            counts_v[format(k, f"0{total_qb}b")] = v * 255
+
+        # Extract odd numbered states for each chunk. (maybe do it in the mapping above to save time?)
+        edge_scan_h = np.array(
+            [counts_h[f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)]
+        ).reshape(H_SIZE, V_SIZE)
+
+        edge_scan_v = np.array(
+            [counts_v[f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)]
+        ).reshape(H_SIZE, V_SIZE).T
+        # combine h and v into one chunk
+        edge_detected_image.append(edge_scan_h + edge_scan_v)
 
     # Stitch the chunks back into one image.
     # first make empty image
@@ -318,28 +297,22 @@ def sim256x256():
     ed_image_chunks = []
     res = 0 # index of current result
 
-
     #loop for upper left box for each chunk
     for i in range(len(is_empty)):
         # if there was data that was processed
         if not is_empty[i]:
             # paste it in to the image
-            #ULBox = ((i*16)%256, i//16*16) was to be hard coded for testing
-            #todo: change ULBox for any size.
-            ULBox = ((i*16)%256, i//16*16)  # find upper left cords of chunk based off of chunk index
-            ed_image.paste(Image.fromarray(edge_detected_image[res], mode='L'), box=ULBox)  # paste 16x16 chunk
+            #ULBox = (i//16*16, (i*16)%256) was to be hard coded for testing
+            ULBox = (i//H_SIZE*H_SIZE, (i*V_SIZE) % image.shape[0]) # find upper left cords of chunk based off of chunk index
+            ed_image.paste(Image.fromarray(edge_detected_image[res], mode='L'), box=ULBox)  # paste chunk
             ed_image_chunks.append(edge_detected_image[res])
             res += 1 # move res to next result
         # If not then leave as default black
         else:
             ed_image_chunks.append(np.zeros((H_SIZE, V_SIZE))) #16x16, (16,16) for hard coded testing
 
-
     # don't know if this works, if it does then remove try/catch
-    try:
-        plot_chunks(ed_image_chunks)
-    except Exception:
-        print(len(ed_image_chunks))
+    plot_chunks(ed_image_chunks, image.shape[0], image.shape[1])
 
     # Plot edge detected image.
     plot_image(np.array(ed_image), 'Full Edge Detected Image')
@@ -351,6 +324,7 @@ def main():
     print('*************************************************')
 
     sim256x256()
+
 
 if __name__ == "__main__":
     main()

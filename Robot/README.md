@@ -16,3 +16,5 @@ Starting the video web server:
 sudo LD_LIBRARY_PATH=`pwd` ./mjpg_streamer -i "./input_uvc.so -d /dev/video0" -o "./output_http.so -p 8080 -w ./www" &
 On the PC: http://<car_ip_address>:8080/javascript.html
 
+https://docs.google.com/document/d/18YJO8PE291tDj96-WAcOnUBxY6m6YaEdaBYY-3MszCw/edit#
+Full edited doc

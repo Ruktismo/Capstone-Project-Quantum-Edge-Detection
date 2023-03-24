@@ -116,7 +116,7 @@ def circuit_h(img):
     qc_h.barrier()
     qc_h.h(0)
     qc_h.barrier()
-    #TODO: MAIN FOCUS: DECREMENT GATE; EFFICIENCY!!
+    #TODO: MAIN FOCUS: DECREMENT GATE; EFFICIENCY!! <---
     # Decrement gate - START
     qc_h.x(0)
     qc_h.cx(0, 1)

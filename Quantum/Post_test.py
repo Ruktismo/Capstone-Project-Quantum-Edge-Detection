@@ -3,9 +3,9 @@ from PIL import Image
 import matplotlib.pyplot as plt
 from matplotlib import style
 
-from TestReasults import is_empty
-from TestReasults import result_h
-from TestReasults import result_v
+from SuperComputeRes import is_empty
+from SuperComputeRes import result_h
+from SuperComputeRes import result_v
 
 data_qb = 8  # Set to ceil(log_2(image.CropSize)) hardcoded as 8 since image crop is 16x16
 anc_qb = 1  # This is the auxiliary qbit.
@@ -43,7 +43,6 @@ def plot_chunks(chunks):
 
 
 edge_detected_image = []
-#TODO combine from here to MARK into one loop
 #for each circuit we have
 for i in range(243):
     counts_h = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}  #create binaries
@@ -51,10 +50,10 @@ for i in range(243):
 
     # Transfer all known values form experiment results to dic
     for k, v in result_h[i].items():
-        counts_h[format(k, f"0{total_qb}b")] = v * 255  # And convert from probability to color int between 0-255
+        counts_h[k] = v * 255  # And convert from probability to color int between 0-255
 
     for k, v in result_v[i].items():
-        counts_v[format(k, f"0{total_qb}b")] = v * 255
+        counts_v[k] = v * 255
 
     # Extract odd numbered states for each chunk. (maybe do it in the mapping above to save time?)
     edge_scan_h = np.array(

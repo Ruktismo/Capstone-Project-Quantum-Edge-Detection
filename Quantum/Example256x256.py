@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from multiprocessing import Pool
 from PIL import Image
 from matplotlib import style
+import math as Math
 
 
 #TOKEN will be IBM quantum account API token
@@ -30,7 +31,10 @@ except ValueError:
     V_SIZE = 16
 
 # Initialize global variable for number of qubits
-data_qb = 8  # Set to ceil(log_2(image.CropSize)) hardcoded as 8 since image crop is 16x16
+data_qb = Math.ceil(Math.log2(H_SIZE*V_SIZE)) # Set to ceil(log_2(image.CropSize)) hardcoded as 8 since image crop is 16x16
+#h_size*v_size = dimension to plug in
+#was originally data_qb = 8 for testing 16x16. equation will be for any size
+
 anc_qb = 1  # This is the auxiliary qubit.
 total_qb = data_qb + anc_qb  #total qubits
 
@@ -46,12 +50,13 @@ def plot_image(img, title: str):
 
 
 #Function to plot each chunk of the 256x256 image
-def plot_chunks(chunks):
-    fig, axs = plt.subplots(256//H_SIZE,256//V_SIZE)
+def plot_chunks(chunks, shape_h, shape_v):
+    #256//h_size, 256//v_size for hardcoding for testing. replace shape_h and shape_v with 256
+    fig, axs = plt.subplots(shape_h//H_SIZE, shape_v//V_SIZE)
     index = 0
     #loop through each vertical and each horizontal
-    for v in range(256//V_SIZE):
-        for h in range(256//H_SIZE):
+    for v in range(shape_v//V_SIZE):
+        for h in range(shape_h//H_SIZE):
             # plot chunk
             axs[v,h].imshow(chunks[index], extent=[0, chunks[index].shape[0], chunks[index].shape[1], 0],
                             cmap='viridis', vmin=0.0, vmax=1.0)
@@ -102,6 +107,7 @@ def crop(image, hsize, vsize):
     return img_chunks
 
 #Function for horizontal circuit; used one of glen's files for reference then adjusted
+#will grow for any number of qubits needed (same for v)
 def circuit_h(img):
     # Create the circuit for horizontal scan
     qc_h = QuantumCircuit(total_qb)
@@ -167,6 +173,7 @@ def pre_processing(data: (np.array, int)):
         # Transpile the circuits for optimized execution on the backend
         # We made the circuits with high-level gates, need to decompose to basic gates so IBMQ hardware can understand
         try:
+            #work around is using the seed for eigenvalue issues. gives random seed initially, but if you give a seed, can produce new circuit
             seed = ran.randint(1,2**32)
             qc_small_h_t = transpile(circuits_h, fake_backend, optimization_level=3, seed_transpiler=seed)
             qc_small_v_t = transpile(circuits_v, fake_backend, optimization_level=3, seed_transpiler=seed)
@@ -200,7 +207,8 @@ def sim256x256():
 
     # Then crop the result into chunks
     croped_imgs = crop(image, H_SIZE, V_SIZE)
-    # plot_chunks(croped_imgs)
+    #put this back later. will give size. displays image in chunk form. dont want to do every time for now.
+    #plot_chunks(croped_imgs, image.shape[0], image.shape[1])
 
 
 #Pre-Processing Start
@@ -210,7 +218,7 @@ def sim256x256():
     # Locking to max of 10 processes since anymore and we start to fight with the rest of the computer for RAM and CPU
     # If running on a computer with more than 8 cores and 16Gb of RAM then you can increase
     tic = time.perf_counter()
-    with Pool(processes=10) as pool:
+    with Pool(processes=10) as pool:  #future: change processes number? leave 10 for now.
         results = pool.imap_unordered(pre_processing, [(croped_imgs[N],N) for N in range(len(croped_imgs))])
         for r in results:
             print(f"Chunk {r[2]} processed")
@@ -230,6 +238,8 @@ def sim256x256():
     print(f"Circ v:{len(circ_list_t_v)}")
     print(f"Nones:{len([e for e in is_empty if e])}") # Count how many where not processed
     print(f"Nones List: {is_empty}")
+
+    #calculate ~time it will take to run
     tok = time.perf_counter()
     t = tok - tic
     print(f"Total Time: {t:0.4f} seconds")
@@ -304,7 +314,7 @@ def sim256x256():
 
     # Stitch the chunks back into one image.
     # first make empty image
-    ed_image = Image.new('L', (256, 256))  # L mode is int between 0-255
+    ed_image = Image.new('L', (image.shape[0], image.shape[1]))  # L mode is int between 0-255;; #(256,256 hard coded for initial testing)
     ed_image_chunks = []
     res = 0 # index of current result
 
@@ -314,13 +324,15 @@ def sim256x256():
         # if there was data that was processed
         if not is_empty[i]:
             # paste it in to the image
+            #ULBox = ((i*16)%256, i//16*16) was to be hard coded for testing
+            #todo: change ULBox for any size.
             ULBox = ((i*16)%256, i//16*16)  # find upper left cords of chunk based off of chunk index
             ed_image.paste(Image.fromarray(edge_detected_image[res], mode='L'), box=ULBox)  # paste 16x16 chunk
             ed_image_chunks.append(edge_detected_image[res])
             res += 1 # move res to next result
         # If not then leave as default black
         else:
-            ed_image_chunks.append(np.zeros((16,16)))
+            ed_image_chunks.append(np.zeros((H_SIZE, V_SIZE))) #16x16, (16,16) for hard coded testing
 
 
     # don't know if this works, if it does then remove try/catch

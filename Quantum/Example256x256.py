@@ -15,6 +15,7 @@ from PIL import Image
 from matplotlib import style
 import math as Math
 
+# :)
 
 #TOKEN will be IBM quantum account API token
 #be sure to copy from clipboard (NOT the keyboard shortcut)
@@ -111,14 +112,15 @@ def crop(image, hsize, vsize):
 def circuit_h(img):
     # Create the circuit for horizontal scan
     qc_h = QuantumCircuit(total_qb)
-    qc_h.initialize(img, range(1, total_qb))
+    qc_h.initialize(img, range(1, total_qb)) #todo? maybe look at this for efficiency too? (lower priority)
     qc_h.barrier()
     qc_h.h(0)
     qc_h.barrier()
+    #TODO: MAIN FOCUS: DECREMENT GATE; EFFICIENCY!! <---
     # Decrement gate - START
     qc_h.x(0)
     qc_h.cx(0, 1)
-    qc_h.ccx(0, 1, 2)
+    qc_h.ccx(0, 1, 2) #todo? take look at ccx (reducing complexity)
     for c in range(3,total_qb):
         qc_h.mcx([b for b in range(c)], c)
     # Decrement gate - END
@@ -253,6 +255,7 @@ def sim256x256():
     # Make a new session with IBM
     # Set backend to "ibmq_qasm_simulator" for non-quantum results, for quantum results use "ibmq_belem" or other
     with Session(service=service, backend="ibmq_qasm_simulator") as session:
+            #todo; adjust ibmq
         sampler_h = Sampler(session=session)  # Make a Sampler to run the circuits
         # Executing the circuits on the backend
         job_h = sampler_h.run(circ_list_t_h, shots=8192)

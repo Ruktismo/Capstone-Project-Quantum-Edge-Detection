@@ -1,26 +1,13 @@
 # Importing standard Qiskit libraries and configuring account
 # Libs needed: qiskit, matplotlib, pylatexenc, qiskit-ibm-runtime
-from qiskit import *
-from qiskit.compiler import transpile
-from qiskit.providers.fake_provider.backends.guadalupe.fake_guadalupe import FakeGuadalupeV2 # for 16x16
-from qiskit_ibm_runtime import QiskitRuntimeService, Session, Sampler
+from qiskit import QuantumCircuit, execute, Aer
 
 #standard libraries needed
-import sys
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import style
 
-#error check for command args being passed in
-#TOKEN will be IBM quantum account API token
-#be sure to copy from clipboard (NOT the keyboard shortcut)
-try:
-    TOKEN = sys.argv[1]
-except IndexError:
-    print(f"ERROR: INCORRECT NUMBER OF ARGS")
-    print(f"Expected: [Token]\nGot: {sys.argv}")
-    exit()
 
 # Function for plotting the image using matplotlib
 # parameters: image and title
@@ -128,32 +115,23 @@ def local16x16():
 
     # Combine both circuits into a single list
     circ_list = [qc_h, qc_v]
-
-    fake_backend = FakeGuadalupeV2()
-
-    # Transpile the circuits for optimized execution on the backend
-    # We made the circuits with high-level gates, need to decompose to basic gates so IBMQ hardware can understand
-    qc_small_h_t = transpile(qc_h, fake_backend, optimization_level=3)
-    qc_small_v_t = transpile(qc_v, fake_backend, optimization_level=3)
-
-    # Combining both circuits into a list
-    circ_list_t = [qc_small_h_t, qc_small_v_t]
-
-    #to calculate compilation time then output to console
+    # to calculate compilation time then output to console
     tok = time.perf_counter()
     t = tok - tic
     print(f"Total Compile Time: {t:0.4f} seconds")
 
-    #connect to simulator
+
     #using QASM_SIMULATOR
-    service = QiskitRuntimeService(channel="ibm_quantum", token=TOKEN)
-    # Set backend to "ibmq_qasm_simulator" for non-quantum results, for quantum results use "ibmq_belem" or other
-    with Session(service=service, backend="ibmq_qasm_simulator") as session:
-        sampler = Sampler(session=session)
-        job = sampler.run(circ_list_t, shots=8192)
-        print("\nJob queued, look to IBM website to get time updates.\nDO NOT CLOSE PROGRAM!!!")
-        # Getting the resultant probability distribution after measurement
-        result = job.result()  # Blocking until IBM returns with results
+    tic = time.perf_counter()
+
+    backend = Aer.get_backend('qasm_simulator')
+    job = execute(circ_list, backend, shots=1024)
+    result = job.result().get_counts()
+    # Measuring run time
+    tok = time.perf_counter()
+    t = tok - tic
+    print(f"Total Run Time: {t:0.4f} seconds")
+
 
     # Make dic with keys that are binaries from 0 to 2^total_qb. with values of 0.0 to start.
     # This is done since IBM will not return Qbit configs that are 0. So we need to map the results to the full space
@@ -162,10 +140,10 @@ def local16x16():
     counts_v = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
 
     # Transfer all known values form experiment results to dic
-    for k, v in result.quasi_dists[0].items():
-        counts_h[format(k, f"0{total_qb}b")] = v
-    for k, v in result.quasi_dists[1].items():
-        counts_v[format(k, f"0{total_qb}b")] = v
+    for k, v in result[0].items():
+        counts_h[k] = v / 1024  # div by 1024 since v is the counts, and we need a probability between 0-1
+    for k, v in result[1].items():
+        counts_v[k] = v / 1024
 
 
     # Extracting counts for odd-numbered states. i.e. data that we are interested in

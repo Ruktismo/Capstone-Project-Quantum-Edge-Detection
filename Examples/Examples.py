@@ -1,11 +1,9 @@
 # Importing standard Qiskit libraries and configuring account
 # Libs needed: qiskit, matplotlib, pylatexenc, qiskit-ibm-runtime
 from qiskit import *
-from qiskit import IBMQ
 from qiskit.compiler import transpile
 from qiskit.providers.fake_provider.backends.belem.fake_belem import FakeBelemV2 # for 2x2
 from qiskit.providers.fake_provider.backends.guadalupe.fake_guadalupe import FakeGuadalupeV2 # for 16x16
-from qiskit.visualization import *
 from qiskit_ibm_runtime import QiskitRuntimeService, Session, Sampler
 from qiskit.visualization import plot_histogram
 
@@ -39,7 +37,7 @@ def plot_image(img, title: str):
 
 
 # Convert the raw pixel values to probability amplitudes
-# i.e. sum of all pixels is one
+# i.e. sum of all pixels is 1
 def amplitude_encode(img_data):
     # Calculate the RMS value
     rms = np.sqrt(np.sum(np.sum(img_data ** 2, axis=1)))  # sum up all pixels to get total
@@ -108,7 +106,7 @@ def local16x16():
     qc_h.measure_all()
 
 
-    # Create the circuit for vertical scan; built in functions
+    # Create the circuit for vertical scan; built-in functions
     qc_v = QuantumCircuit(total_qb)
     qc_v.initialize(image_norm_v, range(1, total_qb))
     qc_v.barrier()
@@ -198,7 +196,7 @@ def local16x16():
 
 
 """
-8x8 example made from Quskit docs:
+8x8 example made from Qiskit docs:
     https://qiskit.org/textbook/ch-applications/quantum-edge-detection.html#Quantum-Probability-Image-Encoding-(QPIE)
 
 Had to change a few things to get it working on local python since jupyter has some built in functions we don't have.
@@ -216,7 +214,7 @@ def local8x8():
                       [0, 0, 0, 1, 1, 1, 1, 0],
                       [0, 0, 0, 0, 0, 0, 0, 0]])
 
-    # Get the amplitude ancoded pixel values
+    # Get the amplitude encoded pixel values
     # Horizontal: Original image
     image_norm_h = amplitude_encode(image)
 
@@ -268,7 +266,7 @@ def local8x8():
     # This can be helpful for smoothing out quantum randomness.
     threshold = lambda amp: (amp > 1e-15 or amp < -1e-15)  # Take with caution can destroy/muddle data if set wrong.
 
-    # Selecting odd states from the raw statevector and reshaping column vector of size 64 to an 8x8 matrix
+    # Selecting odd states from the raw state-vector and reshaping column vector of size 64 to a 8x8 matrix
     edge_scan_h = np.abs(np.array([1 if threshold(sv_h[2 * i + 1].real) else 0 for i in range(2 ** data_qb)])).reshape(
         8, 8)
     edge_scan_v = np.abs(np.array([1 if threshold(sv_v[2 * i + 1].real) else 0 for i in range(2 ** data_qb)])).reshape(
@@ -319,7 +317,7 @@ def hardware2x2():
     # Plotting the image_small using matplotlib
     plot_image(image_small, 'Cropped image')
 
-    # Get the amplitude ancoded pixel values
+    # Get the amplitude encoded pixel values
     # Horizontal: Original image
     image_norm_h = amplitude_encode(image_small)
 

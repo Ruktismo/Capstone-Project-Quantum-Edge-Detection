@@ -154,7 +154,7 @@ def local16x16():
     edge_scan_sim = edge_scan_h + edge_scan_v
 
     #combine all images
-    ## create 2x2 base to fit 1 image in each quadrant
+    # create 2x2 base to fit 1 image in each quadrant
     fig, imageAxis = plt.subplots(2, 2)
 
     #display each image on the axis

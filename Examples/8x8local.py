@@ -38,7 +38,7 @@ def amplitude_encode(img_data):
 
 
 """
-8x8 example made from Quskit docs:
+8x8 example made from Qiskit docs:
     https://qiskit.org/textbook/ch-applications/quantum-edge-detection.html#Quantum-Probability-Image-Encoding-(QPIE)
 
 Had to change a few things to get it working on local python since jupyter has some built in functions we don't have.

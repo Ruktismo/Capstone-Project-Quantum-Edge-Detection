@@ -7,14 +7,14 @@ Example Explanation of QED for smaller and larger images
 (Image example for testing also taken):
 https://qiskit.org/textbook/ch-applications/quantum-edge-detection.html
 
-IBM account to get token:
+IBM account to get token: (free sign up)
 https://quantum-computing.ibm.com/
 
 For constructing larger decrement gates guide:
 https://algassert.com/circuits/2015/06/12/Constructing-Large-Increment-Gates.html
 
 
--2x2hardware.py:
+-2x2hardware.py
     -runs on real quantum hardware, so queue time may be very long
     -use IBM token in account (copy from clipboard, do not ctrl+c)
 -8x8local.py:

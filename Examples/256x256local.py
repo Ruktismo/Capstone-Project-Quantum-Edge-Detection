@@ -129,7 +129,7 @@ def process16x16(data: (np.array, int)):
     circ_list = [qc_h, qc_v]
 
     #using QASM_SIMULATOR
-    SHOTS = 1
+    SHOTS = 2**10
     backend = Aer.get_backend('statevector_simulator')
     job = execute(circ_list, backend, shots=SHOTS)
     result = job.result().get_counts()
@@ -178,7 +178,7 @@ def crop(image, c_size):
 
 
 def sim256x256():
-    pic = Image.open("./edge_detection_input.jpg")  # open image and crop to 256x256
+    pic = Image.open("./256 Test Images/edge_detection_input.jpg")  # open image and crop to 256x256
     image_RGB = np.asarray(pic)
 
     # The image is in RGB, but we only need one BW
@@ -190,7 +190,7 @@ def sim256x256():
             image[i].append(image_RGB[i][j][0] / 255.0)  # TODO clamp to 0 or 1
 
     image = np.array(image)
-    plot_image(image, 'Original Image')
+    # plot_image(image, 'Original Image')
 
     # Then crop the result into chunks
     croped_imgs = crop(image, CHUCK_SIZE)

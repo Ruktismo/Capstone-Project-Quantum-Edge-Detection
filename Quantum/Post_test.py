@@ -3,10 +3,14 @@ from PIL import Image
 import matplotlib.pyplot as plt
 from matplotlib import style
 
+"""
+Import data from IBM for test that ran but post-processing failed.
+Stored in another file to keep this one small.
+
 from PostTestS32 import is_empty
 from PostTestS32 import result_h
 from PostTestS32 import result_v
-
+"""
 data_qb = 10  # Set to ceil(log_2(image.CropSize)) hardcoded as 8 since image crop is 16x16
 anc_qb = 1  # This is the auxiliary qbit.
 total_qb = data_qb + anc_qb

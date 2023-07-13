@@ -1,3 +1,8 @@
+"""
+Keeping this file for reference. It may not be needed any more.
+TODO: see if it's safe to delete
+"""
+
 #Qiskit libraries needed
 from qiskit import *
 from qiskit.compiler import transpile
@@ -193,7 +198,7 @@ def pre_processing(data: (np.array, int)):
 #####################################################
 def sim256x256():
     style.use('bmh')  # This is setting the color scheme for the plots.
-    pic = Image.open("./edge_detection_input.jpg")  # open image and crop to 256x256
+    pic = Image.open("./256 Test Images/edge_detection_input.jpg")  # open image and crop to 256x256
     image_RGB = np.asarray(pic)
 
     # The image is in RGB, but we only need one BW

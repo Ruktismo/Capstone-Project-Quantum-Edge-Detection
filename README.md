@@ -1,6 +1,6 @@
 <h1>Capstone Project: Quantum Edge Detection</h1>
 
-- Andrew Ericksson
+- Andrew Erickson
 - Yumi Lamansky
 - Meredith Kuhler
 - Michael Del Regno

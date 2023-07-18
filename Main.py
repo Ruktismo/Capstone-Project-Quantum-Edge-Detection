@@ -32,24 +32,27 @@ def get_photo():
 
     step_1 = time.perf_counter() - start_time
     log.debug(f"Got photo in {step_1:0.4f}sec")
+    return None
 
 def get_edges(pic):
     log.debug("Getting edges of photo")
     start_time = time.perf_counter()
-    QED.QED(pic)
+    edge_img = QED.QED(pic)
     step_2 = time.perf_counter() - start_time
     log.debug(f"Got edges of photo in {step_2:0.4f}sec")
+    return edge_img
 
 
-def decide_drive_command():
+def decide_drive_command(edge_pic):
     log.debug("Sending to Neural Network to decide movement")
     start_time = time.perf_counter()
 
     step_3 = time.perf_counter() - start_time
     log.debug(f"Movement decided in {step_3:0.4f}sec")
+    return None
 
 
-def send_command():
+def send_command(command):
     log.debug("Sending movement command to car")
     start_time = time.perf_counter()
 
@@ -59,13 +62,8 @@ def send_command():
 
 def main():
     # TODO do we need this?
-    log.info("Capstone Project 2023- Quantum Vision Robot Car\nBy:"
-             "\n\tAndrew Erickson"
-             "\n\tYumi Lamansky"
-             "\n\tMeredith Kuhler"
-             "\n\tMichael Del Regno"
-             "\n\tKenneth Wang"
-             "\n\tZaid Buni")
+    log.info("Capstone Project 2023- Quantum Vision Robot Car\nBy: Andrew Erickson, Yumi Lamansky, Meredith Kuhler"
+             ", Michael Del Regno, Kenneth Wang, Zaid Buni")
     connect_car()  # Call car to initiate startup.
 
     """
@@ -76,18 +74,18 @@ def main():
     If we want to make more of a pipeline so all 4 parts working all the time,
     then each step will need its own process.
     """
-    # Loop until Ctrl+C (or maybe Neural Network can give stop)
+    # Loop until Ctrl+C (or maybe Neural Network can give stop command?)
     try:
         while True:
             cycle_start = time.perf_counter()
             # 1) Get photo from car
-            get_photo()
+            pic = get_photo()
             # 2) Pass photo to QED to get edge photo
-            get_edges()
+            edge_pic = get_edges(pic)
             # 3) Pass edge photo to Neural Network to get drive command
-            decide_drive_command()
+            command = decide_drive_command(edge_pic)
             # 4) Send drive command to car
-            send_command()
+            send_command(command)
             cycle_end = time.perf_counter()
             log.info(f"Movement cycle done in {(cycle_end - cycle_start):0.4f} seconds")
     except KeyboardInterrupt:

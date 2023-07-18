@@ -8,7 +8,6 @@ import time
 import math as m
 from multiprocessing import Pool
 import numpy as np
-from PIL import Image
 import configparser
 
 # get logger, use __name__ to prevent conflict
@@ -131,8 +130,8 @@ def process16x16(data: (np.array, int)):
 def crop(image, c_size):
     # quick error check for split functions.
     if (image.shape[0] % c_size != 0) or (image.shape[1] % c_size != 0):
-        print("ERROR\n\tImage is not cleanly dividable by chunk size.")
-        exit()
+        log.error("ERROR\n\tImage is not cleanly dividable by chunk size.")
+        exit(-1)
 
     h_chunks = image.shape[0] / c_size
     v_chunks = image.shape[1] / c_size
@@ -168,7 +167,7 @@ def QED(pic):
     with Pool(processes=THREAD_COUNT) as pool:
         results = pool.imap_unordered(process16x16, [(croped_imgs[N],N) for N in range(len(croped_imgs))])
         for r in results:
-            print(f"Chunk {r[1]} processed")
+            log.debug(f"Chunk {r[1]} processed")
             if r[0] is None:
                 is_empty[r[1]] = True
             else:
@@ -176,11 +175,11 @@ def QED(pic):
                 edge_detected_image[r[1]] = r[0]
     # not all chunks may be processed, so shorten list to only be processed chunks
     edge_detected_image = [c for c in edge_detected_image if isinstance(c, np.ndarray)]
-    print(f"Nones:{len([e for e in is_empty if e])}")  # Count how many where not processed
+    log.debug(f"Nones count:{len([e for e in is_empty if e])}")  # Count how many where not processed
     # calculate ~time it will take to run
     tok = time.perf_counter()
     t = tok - tic
-    print(f"Total Compile/Run Time: {t:0.4f} seconds")
+    log.debug(f"Total Compile/Run Time: {t:0.4f} seconds")
 # Processing End
 
     # Stitch the chunks back into one image.

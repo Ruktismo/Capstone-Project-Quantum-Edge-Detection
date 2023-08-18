@@ -17,7 +17,7 @@ log.info("setting up QED")
 # Create a configparser object
 config = configparser.ConfigParser()
 # Read an existing configuration file
-config.read("./Config.ini")
+config.read_file(open("./../Config.ini"))
 # from config group QED get var CHUNK_SIZE
 CHUNK_SIZE = int(config['QED']['CHUNK_SIZE'])  # should be int, needs casting since all config are read as str
 THREAD_COUNT = int(config['QED']['QED_THREAD_COUNT'])

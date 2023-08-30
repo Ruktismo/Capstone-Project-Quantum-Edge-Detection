@@ -1,4 +1,7 @@
 The [[Neural Network]] group members are
-- #TODO add whoever is doing NN
+- Zaid Buni
+- Meredith Kuhler
+- Michael Del Regno
+- Kenneth Wang
 
 #TODO add description of Neural Network stuff

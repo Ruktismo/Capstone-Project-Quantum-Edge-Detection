@@ -6,6 +6,7 @@
       {
         "id": "58bf7c9233811a2c",
         "type": "tabs",
+        "dimension": 65.3250773993808,
         "children": [
           {
             "id": "a35b64f6ea81eebe",
@@ -13,8 +14,8 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Quantum/QED.md",
-                "mode": "source",
+                "file": "Robotics/Robotics.md",
+                "mode": "preview",
                 "source": false
               }
             }
@@ -24,6 +25,7 @@
       {
         "id": "a66f718352a741f5",
         "type": "tabs",
+        "dimension": 34.6749226006192,
         "children": [
           {
             "id": "1a8b753f0376d569",
@@ -99,7 +101,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Quantum/QED.md",
+                "file": "Robotics/Robotics.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -116,7 +118,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Quantum/QED.md",
+                "file": "Robotics/Robotics.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -139,7 +141,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Quantum/QED.md"
+                "file": "Robotics/Robotics.md"
               }
             }
           }
@@ -162,18 +164,18 @@
   },
   "active": "a35b64f6ea81eebe",
   "lastOpenFiles": [
-    "Robotics/Untitled.md",
-    "Quantum/QED.md",
     "Quantum/Quantum.md",
-    "Quantum/Image Mapping via Pairing Function.md",
-    "Quantum/Polarized Encoding.md",
-    "Capstone Project.md",
-    "Neural Network/TensorFlow.md",
-    "Quantum/Boundary Error.md",
-    "Quantum/Boundary Error Fix.md",
-    "Untitled.canvas",
-    "Neural Network/Neural Network.md",
+    "Robotics/Robot Setup and Usage.md",
     "Robotics/Robotics.md",
+    "Quantum/QED.md",
+    "Quantum/Polarized Encoding.md",
+    "Quantum/Image Mapping via Pairing Function.md",
+    "Neural Network/TensorFlow.md",
+    "Neural Network/Neural Network.md",
+    "Quantum/Boundary Error Fix.md",
+    "Quantum/Boundary Error.md",
+    "Capstone Project.md",
+    "Untitled.canvas",
     "Neural Network",
     "Robotics",
     "Quantum"

@@ -6,7 +6,7 @@
       {
         "id": "58bf7c9233811a2c",
         "type": "tabs",
-        "dimension": 65.3250773993808,
+        "dimension": 45.704057279236274,
         "children": [
           {
             "id": "a35b64f6ea81eebe",
@@ -14,18 +14,31 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Robotics/Robotics.md",
+                "file": "Robotics/Robot Setup and Usage.md",
                 "mode": "preview",
                 "source": false
               }
             }
+          },
+          {
+            "id": "17a02071ea912428",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Robotics/Robotics.md",
+                "mode": "source",
+                "source": false
+              }
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       },
       {
         "id": "a66f718352a741f5",
         "type": "tabs",
-        "dimension": 34.6749226006192,
+        "dimension": 54.295942720763726,
         "children": [
           {
             "id": "1a8b753f0376d569",
@@ -162,11 +175,11 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "a35b64f6ea81eebe",
+  "active": "17a02071ea912428",
   "lastOpenFiles": [
-    "Quantum/Quantum.md",
-    "Robotics/Robot Setup and Usage.md",
     "Robotics/Robotics.md",
+    "Robotics/Robot Setup and Usage.md",
+    "Quantum/Quantum.md",
     "Quantum/QED.md",
     "Quantum/Polarized Encoding.md",
     "Quantum/Image Mapping via Pairing Function.md",

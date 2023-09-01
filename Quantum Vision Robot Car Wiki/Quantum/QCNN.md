@@ -1,0 +1,1 @@
+Quantum Convolutional Neural Network ([[QCNN]]) is a method using a [[Quantum Circuit]] to train a [[Neural Network]] for classification.

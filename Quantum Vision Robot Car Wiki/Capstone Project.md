@@ -10,4 +10,5 @@ Install these libraries with pip #TODO add version info for each lib
 - qiskit
 - qiskit-ibm-runtime
 - qiskit-machine-learning
+- qiskit_algorithms
 

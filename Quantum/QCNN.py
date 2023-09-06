@@ -9,6 +9,7 @@ from PIL import Image
 from IPython.display import clear_output
 import matplotlib.pyplot as plt
 from qiskit.algorithms.optimizers import COBYLA
+#make sure to: pip install qiskit_algorithms
 from qiskit_machine_learning.algorithms.classifiers import NeuralNetworkClassifier
 # Unused It's for splitting data into train test pools
 # so after training we can use the test set to eval on data it has not seen before

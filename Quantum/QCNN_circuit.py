@@ -4,6 +4,7 @@ from qiskit.circuit import ParameterVector
 from qiskit.circuit.library import ZFeatureMap
 from qiskit.quantum_info import SparsePauliOp
 from qiskit.utils import algorithm_globals
+#make sure to: pip install qiskit_algorithms
 from qiskit_machine_learning.neural_networks import EstimatorQNN
 
 import logging

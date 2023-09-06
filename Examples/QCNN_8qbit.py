@@ -180,14 +180,15 @@ def main():
     print("QCNN circuit built")
     # circuit.draw("mpl")
 
-    # initial_point = None
+    initial_point = None
 
-    with open("qcnn_init_point_100.0.json", 'r') as f:
-        initial_point = json.load(f)
+    #with open("qcnn_init_point.json", 'r') as f:
+        #initial_point = json.load(f)
 
     classifier = NeuralNetworkClassifier(
         qnn,
-        optimizer=COBYLA(maxiter=200),  # Set max iterations here
+        optimizer=COBYLA(maxiter=1000),  # Set max iterations here
+        # it takes about 17.5 min per 1000 iters. So we could do 10K iters in about 3hr
         callback=callback_graph,
         initial_point=initial_point  # we have no starting point, but could load one
     )
@@ -204,11 +205,11 @@ def main():
     t = tok - tic
     print(f"Total Training Time: {t:0.4f} seconds")
 
-    # score classifier
+    # classifier.score will take an input output pair and evaluate how accurate the network is
     print(f"Accuracy from the train data : {np.round(100 * classifier.score(x, y), 2)}%")
 
     # Testing our trained network
-    y_predict = classifier.predict(test_images)
+    y_predict = classifier.predict(test_images)  # how to feed forward the network for an answer.
     x = np.asarray(test_images)
     y = np.asarray(test_labels)
     print(f"Accuracy from the test data : {np.round(100 * classifier.score(x, y), 2)}%")
@@ -225,7 +226,7 @@ def main():
     plt.show()
 
     # Save weights to a json file, so we can load it up as an initial point for more training later
-    with open(f"qcnn_init_point_{np.round(100 * classifier.score(x, y), 2)}-2.json", 'x') as f:
+    with open(f"qcnn_init_point_long_train_1000.json", 'x') as f:
         json.dump(classifier.weights.tolist(), f)
 
     # Plot full Objective function value against iteration graph

@@ -13,13 +13,22 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Quantum/QCNN.md",
+                "file": "Quantum/Boundary Error.md",
                 "mode": "source",
                 "source": false
               }
             }
+          },
+          {
+            "id": "b87e01f0d1e6d9d9",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {}
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -85,7 +94,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Quantum/QCNN.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +110,6 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Quantum/QCNN.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -124,9 +131,7 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {
-                "file": "Quantum/QCNN.md"
-              }
+              "state": {}
             }
           }
         ]
@@ -146,20 +151,20 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "2aee8bf564107135",
+  "active": "b87e01f0d1e6d9d9",
   "lastOpenFiles": [
-    "Quantum/QED.md",
-    "Quantum/QCNN.md",
     "Quantum/Boundary Error.md",
     "Quantum/Possible Optimizations.md",
+    "Quantum/Quantum.md",
+    "Quantum/QCNN.md",
+    "Neural Network/Neural Network.md",
+    "Quantum/QED.md",
     "Quantum/Image Mapping via Pairing Function.md",
     "Quantum/Boundary Error Fix.md",
     "Quantum/Polarized Encoding.md",
-    "Quantum/Quantum.md",
     "Robotics/Robot Setup and Usage.md",
     "Robotics/Robotics.md",
     "Neural Network/TensorFlow.md",
-    "Neural Network/Neural Network.md",
     "Capstone Project.md",
     "Untitled.canvas",
     "Neural Network",

@@ -1,10 +1,13 @@
 # Importing standard Qiskit libraries and configuring account
 # Libs needed: qiskit, matplotlib, pylatexenc, qiskit-ibm-runtime
+import os.path
+
 from qiskit import QuantumCircuit, execute, Aer
 
 # Standard libraries used
 import logging
 import time
+from PIL import Image
 import math as m
 from multiprocessing import Pool
 import numpy as np
@@ -146,7 +149,19 @@ def crop(image, c_size):
 
 
 def QED(pic):
-    image_RGB = np.asarray(pic)
+    # attempt to open image and/or convert to np.array
+    if isinstance(pic, Image.Image):
+        image_RGB = np.asarray(pic)
+    elif os.path.isfile(pic):
+        img = Image.open(pic)
+        image_RGB = np.asarray(img)
+    elif isinstance(pic, np.ndarray):
+        image_RGB = pic  # nothing to do just checking its one of the valid types
+    else:
+        log.warning("Invalid type given to QED\n"
+                    "Expected types: PIL.Image.Image, File Path to image, NumPy Array\n"
+                    f"Got: {type(pic)}")
+        return None
 
     # The image is in RGB, but we only need B&W
     # Convert the RBG component of the image to B&W image, as a numpy (uint8) array

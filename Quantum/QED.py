@@ -55,7 +55,7 @@ def amplitude_encode(img_data):
 
 #Function for building circuit; used one of glen's files for reference then adjusted
 #will grow for any number of qubits needed (same circuit for horizontal/vertical)
-def build_circuit(img):
+def build_qed_circuit(img):
     # Create the circuit for horizontal scan
     qc = QuantumCircuit(total_qb)
     qc.initialize(img, range(1, total_qb))
@@ -89,9 +89,9 @@ def process16x16(data: (np.array, int)):
     image_norm_v = amplitude_encode(data[0].T)  # Image transpose for the vertical, so vertical is treated like horizontal
 
     # Create the circuit for horizontal scan
-    qc_h = build_circuit(image_norm_h)
+    qc_h = build_qed_circuit(image_norm_h)
     # Create the circuit for vertical scan
-    qc_v = build_circuit(image_norm_v)
+    qc_v = build_qed_circuit(image_norm_v)
 
     # Combine both circuits into a single list
     circ_list = [qc_h, qc_v]

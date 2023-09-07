@@ -96,6 +96,7 @@ def build_qcnn(qbits):
 
     ansatz = QuantumCircuit(8, name="Ansatz")
 
+
     # First Convolutional Layer
     ansatz.compose(conv_layer(8, "с1"), list(range(8)), inplace=True)
 

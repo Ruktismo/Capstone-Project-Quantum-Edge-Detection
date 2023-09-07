@@ -56,10 +56,12 @@ def main():
             # convert np.array to PIL.Image
             img = Image.fromarray(processed)
             # save Image to Post-Processed/label folder
-            save_path = fs.join(fs.abspath(f"{data_dir}/{label}"), file)
+            save_path = fs.join(fs.abspath(f"{data_dir}/{label.title()}"), file)
 
             try:
                 img.save(save_path)  # if save_path is not a proper path it will throw an OSError
+                # Move old photo into sub-folder
+                os.rename(fs.abspath(file), f"{label.title()}/{file}")
             except OSError as e:
                 log.error(f"Unable to save photo: {save_path}\nCheck file system to see if path is viable.")
                 log.error(f"Full Error:\n{e}")

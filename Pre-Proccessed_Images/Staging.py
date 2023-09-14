@@ -13,12 +13,16 @@ import logging
 from PIL import Image
 import os
 import os.path as fs
+import ast
 
 from Quantum.QED import QED
 
 
 # get logger, use __name__ to prevent conflict
 log = logging.getLogger(__name__)
+logging.basicConfig(filename="../Latest_Run.log", filemode='w', encoding='utf-8', level=logging.INFO,
+                    format="%(asctime)s : %(levelname)s : %(name)s : %(funcName)s : %(message)s",
+                    datefmt='%m/%d %I:%M:%S %p')
 log.info("setting up QED")
 
 # Create a configparser object
@@ -26,8 +30,19 @@ config = configparser.ConfigParser()
 # Read an existing configuration file
 config.read_file(open("./../Config.ini"))
 
-tags = config['NN']['DATA_TAGS']
+tags = ast.literal_eval(config['NN']['DATA_TAGS'])
 data_dir = config['NN']['TRAINING_DATA_DIR']
+
+if not isinstance(tags, list):
+    log.error("Unable to convert NN.DATA_TAGS to a list. Check config file")
+    exit(-1)
+
+def get_tag(name: str):
+    for tag in tags:
+        if name.lower().find(tag) != -1:
+            return tag
+    return None
+
 
 def main():
     files = os.listdir(".")
@@ -35,28 +50,25 @@ def main():
     dir_size = len(files)
     processed_count = 0  # count the num of files successfully processed
     for file in files:
+        if processed_count > 2:
+            log.info("Debug break for testing...Quitting")
+            break
+        label = get_tag(file)
         # determine tag from name
-        if (file.lower() not in tags) or fs.isdir(file):
+        if (label is None) or fs.isdir(file):
             # if a tag can't be seen/isdir then skip.
             log.warning(f"File: {file} does not have a valid tag or is a directory. Skipping...")
             continue
-        label = None
-        for tag in tags:
-            if file.lower() in tag:
-                label = tag
-        # sanity error check
-        if label is None:
-            log.error(f"Tag scanning failed\nOffending File: {file}")
-            exit(-1)
+
 
         log.info(f"Processing photo {file} {processed_count+1}/{dir_size}")
         full_path = fs.abspath(file)
         processed = QED(full_path) # process photo and get back np.array of ed image
         if processed is not None:
-            # convert np.array to PIL.Image
-            img = Image.fromarray(processed)
+            # convert np.array to PIL.Image, JPEG can't use floating-point numbers so convert to 0-255 (greyscale)
+            img = Image.fromarray(processed).convert("L")
             # save Image to Post-Processed/label folder
-            save_path = fs.join(fs.abspath(f"{data_dir}/{label.title()}"), file)
+            save_path = f"{data_dir}/{label.title()}/{file}"
 
             try:
                 img.save(save_path)  # if save_path is not a proper path it will throw an OSError
@@ -68,7 +80,7 @@ def main():
                 exit(-2) # if an OSError happens it will most likely happen with the other files so exit
 
             processed_count += 1
-            log.info(f"Photo {file} processed and saved in {label} folder.")
+            log.info(f"Photo {file} processed and saved in the {label.title()} folder.")
         else:
             log.warning(f"Processing error encountered, skipping {file}")
     # All files looped over close/clean up.

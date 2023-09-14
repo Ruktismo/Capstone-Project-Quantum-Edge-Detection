@@ -136,8 +136,8 @@ def crop(image, c_size):
         log.error("ERROR\n\tImage is not cleanly dividable by chunk size.")
         exit(-1)
 
-    h_chunks = image.shape[0] / c_size
-    v_chunks = image.shape[1] / c_size
+    v_chunks = image.shape[0] / c_size
+    h_chunks = image.shape[1] / c_size
 
     # Split the image vertically then pump all vertical slices into hsplit to get square chunks
     nested_chunks = [np.hsplit(vs, h_chunks) for vs in np.vsplit(image, v_chunks)]
@@ -202,15 +202,21 @@ def QED(pic):
     ed_image_arr = np.zeros((image_RGB.shape[0], image_RGB.shape[1]))
     res = 0  # index of current result
 
+    # Iterator for getting the indexes for pasting
+    # defined within QED, so it can use image.shape and chunk size without issue
+    def ULBox_iterator():
+        for upper_left_x_cord in range(0, image.shape[0], CHUNK_SIZE):
+            for upper_left_y_cord in range(0, image.shape[1], CHUNK_SIZE):
+                yield upper_left_x_cord, upper_left_y_cord
+    box_gen = ULBox_iterator()  # create a generator obj to give the cords
+
     # loop for upper left box for each chunk
     for i in range(len(is_empty)):
         # if there was data that was processed
         if not is_empty[i]:
             # paste it in to the image
-
             # find upper left cords of chunk based off of chunk index
-            ULBox = (i // (image.shape[0] // CHUNK_SIZE) * CHUNK_SIZE,
-                     (i * CHUNK_SIZE) % image.shape[0])
+            ULBox = next(box_gen)  # ask the generator for the next set of cords
             # paste ed_results into ed_image, cutting out edge pixels
             ed_image_arr[ULBox[0]+1:ULBox[0] + CHUNK_SIZE - 1, ULBox[1] + 1:ULBox[1] + CHUNK_SIZE - 1] += \
                 edge_detected_image[res][1:CHUNK_SIZE - 1, 1:CHUNK_SIZE - 1]
@@ -222,3 +228,13 @@ def QED(pic):
 
     # return edge detected image.
     return ed_image_arr
+
+
+def main():
+    processed = QED("LEFT.jpg")
+    processed *= 1000000
+    img = Image.fromarray(processed).convert("L")
+    img.save("QED_LEFT2.jpg")
+
+if __name__ == "__main__":
+    main()

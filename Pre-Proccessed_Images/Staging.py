@@ -49,10 +49,8 @@ def main():
     files.remove("Staging.py")  # Remove this file from the list, so it will not attempt to process it.
     dir_size = len(files)
     processed_count = 0  # count the num of files successfully processed
+
     for file in files:
-        if processed_count > 2:
-            log.info("Debug break for testing...Quitting")
-            break
         label = get_tag(file)
         # determine tag from name
         if (label is None) or fs.isdir(file):
@@ -60,11 +58,12 @@ def main():
             log.warning(f"File: {file} does not have a valid tag or is a directory. Skipping...")
             continue
 
-
         log.info(f"Processing photo {file} {processed_count+1}/{dir_size}")
+        print(f"Processing photo {processed_count + 1}/{dir_size}")
         full_path = fs.abspath(file)
         processed = QED(full_path) # process photo and get back np.array of ed image
         if processed is not None:
+            processed *= 1000000 # Scale up probabilities to ints
             # convert np.array to PIL.Image, JPEG can't use floating-point numbers so convert to 0-255 (greyscale)
             img = Image.fromarray(processed).convert("L")
             # save Image to Post-Processed/label folder

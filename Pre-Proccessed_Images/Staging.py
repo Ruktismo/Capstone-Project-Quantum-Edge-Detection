@@ -11,6 +11,7 @@ The location of the tag in the name is up to you.
 import configparser
 import logging
 from PIL import Image
+import sys
 import os
 import os.path as fs
 import ast
@@ -37,6 +38,8 @@ if not isinstance(tags, list):
     log.error("Unable to convert NN.DATA_TAGS to a list. Check config file")
     exit(-1)
 
+MAX_PROCESS = int(sys.argv[1]) # Set a hard limit to the number of processed photos, for testing
+
 def get_tag(name: str):
     for tag in tags:
         if name.lower().find(tag) != -1:
@@ -51,6 +54,9 @@ def main():
     processed_count = 0  # count the num of files successfully processed
 
     for file in files:
+        if processed_count == MAX_PROCESS:
+            log.info("Max processed reached. Stopping...")
+            break
         label = get_tag(file)
         # determine tag from name
         if (label is None) or fs.isdir(file):

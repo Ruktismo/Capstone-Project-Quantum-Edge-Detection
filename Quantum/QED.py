@@ -1,11 +1,10 @@
 # Importing standard Qiskit libraries and configuring account
 # Libs needed: qiskit, matplotlib, pylatexenc, qiskit-ibm-runtime
-import os.path
-
 from qiskit import QuantumCircuit, execute, Aer
 
 # Standard libraries used
 import logging
+import os
 import time
 from PIL import Image
 import math as m

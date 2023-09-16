@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 logging.basicConfig(filename="../Latest_Run.log", filemode='w', encoding='utf-8', level=logging.INFO,
                     format="%(asctime)s : %(levelname)s : %(name)s : %(funcName)s : %(message)s",
                     datefmt='%m/%d %I:%M:%S %p')
-log.info("setting up QED")
+
 
 # Create a configparser object
 config = configparser.ConfigParser()
@@ -54,7 +54,7 @@ def main():
     processed_count = 0  # count the num of files successfully processed
 
     for file in files:
-        if processed_count == MAX_PROCESS:
+        if MAX_PROCESS != -1 and processed_count == MAX_PROCESS:
             log.info("Max processed reached. Stopping...")
             break
         label = get_tag(file)

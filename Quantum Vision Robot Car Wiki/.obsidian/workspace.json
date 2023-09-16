@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Quantum/Boundary Error.md",
+                "file": "Super Computer.md",
                 "mode": "source",
                 "source": false
               }
@@ -27,8 +27,7 @@
               "state": {}
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -94,6 +93,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "Super Computer.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -110,6 +110,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "Super Computer.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -131,7 +132,9 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {}
+              "state": {
+                "file": "Super Computer.md"
+              }
             }
           }
         ]
@@ -151,9 +154,11 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "b87e01f0d1e6d9d9",
+  "active": "2aee8bf564107135",
   "lastOpenFiles": [
     "Quantum/Boundary Error.md",
+    "Quantum/8qbit-training-session-5-1000iters.png",
+    "Super Computer.md",
     "Quantum/Possible Optimizations.md",
     "Quantum/Quantum.md",
     "Quantum/QCNN.md",

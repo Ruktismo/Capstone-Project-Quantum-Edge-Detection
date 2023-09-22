@@ -93,16 +93,35 @@ def pool_layer(sources, sinks, param_prefix):
 # TODO change convolution/pooling layers to be auto generated off of qbits
 def build_qcnn(qbits):
     log.debug("Building QCNN")
-    feature_map = ZFeatureMap(8)
+    feature_map = ZFeatureMap(qbits)
 
-    ansatz = QuantumCircuit(8, name="Ansatz")
+    ansatz = QuantumCircuit(qbits, name="Ansatz")
 
 
-    # First Convolutional Layer
-    ansatz.compose(conv_layer(8, "с1"), list(range(8)), inplace=True)
+    for groups in qbits:
 
-    # First Pooling Layer
-    ansatz.compose(pool_layer([0, 1, 2, 3], [4, 5, 6, 7], "p1"), list(range(8)), inplace=True)
+        num_Groups = 2
+        qbits_List = [0]*qbits
+        chunked_List = []
+        # First Convolutional Layer
+        #ansatz.compose(conv_layer(8, "с1"), list(range(8)), inplace=True)
+        #first convolutional layer will go to n_qubits
+        ansatz.compose(conv_layer(8, "с1"), list(range(8)), inplace=True)
+        # First Pooling Layer
+        #ansatz.compose(pool_layer([0, 1, 2, 3], [4, 5, 6, 7], "p1"), list(range(8)), inplace=True)
+        #first pooling layer will be in n of 2^n groups?
+        for i in range(0, len(qbits), num_Groups):
+            chunked_List.append(qbits_List[i:i+num_Groups])
+
+        ansatz.compose(pool_layer(chunked_List[0], chunked_List[1], "p1"), list(range(qbits)), inplace=True)
+        qbits = qbits / 2
+
+    [0,1,2,3],[4,5,6,7]
+        list[0]    list[1]
+
+    [0,1],[2,3]
+    list[0]   list[1]
+
 
     # Second Convolutional Layer
     ansatz.compose(conv_layer(4, "c2"), list(range(4, 8)), inplace=True)

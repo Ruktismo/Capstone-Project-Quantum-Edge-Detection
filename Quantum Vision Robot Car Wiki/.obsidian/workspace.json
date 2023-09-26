@@ -20,14 +20,31 @@
             }
           },
           {
-            "id": "b87e01f0d1e6d9d9",
+            "id": "bc00bbdf1390f764",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {}
+              "type": "markdown",
+              "state": {
+                "file": "Installing Project.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "9936f51ef4247b49",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Capstone Project.md",
+                "mode": "source",
+                "source": false
+              }
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -93,7 +110,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Super Computer.md",
+                "file": "Installing Project.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -110,7 +127,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Super Computer.md",
+                "file": "Installing Project.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -133,7 +150,17 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Super Computer.md"
+                "file": "Installing Project.md"
+              }
+            }
+          },
+          {
+            "id": "3fb0ee89c383c0bf",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency"
               }
             }
           }
@@ -154,23 +181,30 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "2aee8bf564107135",
+  "active": "bc00bbdf1390f764",
   "lastOpenFiles": [
-    "Quantum/Boundary Error.md",
+    "Capstone Project.md",
+    "Installing Project.md",
     "Quantum/8qbit-training-session-5-1000iters.png",
+    "Quantum/8qbit-training-session-5-Examples.png",
+    "Quantum/QED.md",
     "Super Computer.md",
+    "www.github.com/conda-forge/minifirge.md",
+    "www.github.com/conda-forge",
+    "www.github.com",
+    "Untitled.md",
+    "Windows vs Linux.md",
+    "Quantum/Boundary Error.md",
     "Quantum/Possible Optimizations.md",
     "Quantum/Quantum.md",
     "Quantum/QCNN.md",
     "Neural Network/Neural Network.md",
-    "Quantum/QED.md",
     "Quantum/Image Mapping via Pairing Function.md",
     "Quantum/Boundary Error Fix.md",
     "Quantum/Polarized Encoding.md",
     "Robotics/Robot Setup and Usage.md",
     "Robotics/Robotics.md",
     "Neural Network/TensorFlow.md",
-    "Capstone Project.md",
     "Untitled.canvas",
     "Neural Network",
     "Robotics",

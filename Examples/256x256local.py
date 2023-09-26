@@ -1,12 +1,12 @@
 # Importing standard Qiskit libraries and configuring account
-# Libs needed: qiskit, matplotlib, pylatexenc, qiskit-ibm-runtime
+# Libs needed:
+#   qiskit, matplotlib, pillow, pylatexenc, qiskit-ibm-runtime, qiskit-aer
 from qiskit import QuantumCircuit, execute, Aer
-
-#standard libraries needed
 import sys
 import time
 import math as m
-from multiprocessing import Pool
+# from multiprocessing import Pool  Will work for windows but not linux. Instead use
+from concurrent.futures import ProcessPoolExecutor as Pool
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -200,9 +200,9 @@ def sim256x256():
     is_empty = [None] * len(croped_imgs)
     edge_detected_image = [None] * len(croped_imgs)
     tic = time.perf_counter()
-    with Pool(processes=THREAD_COUNT) as pool:  #future: change processes number? leave 10 for now.
-        results = pool.imap_unordered(process16x16, [(croped_imgs[N],N) for N in range(len(croped_imgs))])
-        for r in results:
+    with Pool(max_workers=THREAD_COUNT) as pool:  #future: change processes number? leave 10 for now.
+        results = pool.map(process16x16, [(croped_imgs[N],N) for N in range(len(croped_imgs))])
+        for r in results: # r may give unexpected type warnings because it has no clue what will come back, it's ok though
             print(f"Chunk {r[1]} processed")
             if r[0] is None:
                 is_empty[r[1]] = True

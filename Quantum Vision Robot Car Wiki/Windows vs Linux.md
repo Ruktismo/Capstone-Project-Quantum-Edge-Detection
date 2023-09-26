@@ -1,0 +1,5 @@
+When running on Windows things may seem fine but when you port the project over to a Linux OS you may get some cryptic errors. This can be due to two things
+## Missing Optional Library Error
+This is due to multiprocessing not properly catching the full extent of the real error. Which is that a REQUIRED library is missing, but what library is not told. So you need to go through [[Installing Project]] again to see that all required libraries are present in your python environment.
+## Daemonic Processes Are Not Allowed To Have Children
+This means that you are using the wrong multiprocessing library/function, there are multiple that can be used. Some will play nice with Windows and not Linux or the other way around. The standard multiprocessing.pool does not work with Linux since all threads that are spawned are daemonic. Daemonic threads have more restrictions on what they can and can't do, so use concurrent.futures.ProcessPoolExecutor which will play much nicer with both OS's.

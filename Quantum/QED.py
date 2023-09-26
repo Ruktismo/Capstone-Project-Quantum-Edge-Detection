@@ -1,14 +1,14 @@
 # Importing standard Qiskit libraries and configuring account
-# Libs needed: qiskit, matplotlib, pylatexenc, qiskit-ibm-runtime
+# Libs needed:
+#   matplotlib, pillow, qiskit, pylatexenc, qiskit-ibm-runtime, qiskit-aer
 from qiskit import QuantumCircuit, execute, Aer
-
-# Standard libraries used
 import logging
 import os
 import time
 from PIL import Image
 import math as m
-from multiprocessing import Pool
+# from multiprocessing import Pool  Will work for windows but not linux. Instead use
+from concurrent.futures import ProcessPoolExecutor as Pool
 import numpy as np
 import configparser
 
@@ -178,8 +178,8 @@ def QED(pic):
     is_empty = [None] * len(croped_imgs)
     edge_detected_image = [None] * len(croped_imgs)
     tic = time.perf_counter()
-    with Pool(processes=THREAD_COUNT) as pool:
-        results = pool.imap_unordered(process16x16, [(croped_imgs[N],N) for N in range(len(croped_imgs))])
+    with Pool(max_workers=THREAD_COUNT) as pool:
+        results = pool.map(process16x16, [(croped_imgs[N],N) for N in range(len(croped_imgs))])
         for r in results:
             log.debug(f"Chunk {r[1]} processed")
             if r[0] is None:

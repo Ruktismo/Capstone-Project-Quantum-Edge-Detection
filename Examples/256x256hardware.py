@@ -1,6 +1,7 @@
 """
 Keeping this file for reference. It may not be needed any more.
 TODO: see if it's safe to delete
+TODO: if keeping update multiprocessing.Pool to concurrent.futures.ProcessPoolExecutor
 """
 
 #Qiskit libraries needed

@@ -97,43 +97,9 @@ def build_qcnn(qbits):
 
     ansatz = QuantumCircuit(qbits, name="Ansatz")
 
-
-    for groups in qbits:
-
-        num_Groups = 2
-        qbits_List = [0]*qbits
-        chunked_List = []
-        # First Convolutional Layer
-        #ansatz.compose(conv_layer(8, "с1"), list(range(8)), inplace=True)
-        #first convolutional layer will go to n_qubits
-        ansatz.compose(conv_layer(8, "с1"), list(range(8)), inplace=True)
-        # First Pooling Layer
-        #ansatz.compose(pool_layer([0, 1, 2, 3], [4, 5, 6, 7], "p1"), list(range(8)), inplace=True)
-        #first pooling layer will be in n of 2^n groups?
-        for i in range(0, len(qbits), num_Groups):
-            chunked_List.append(qbits_List[i:i+num_Groups])
-
-        ansatz.compose(pool_layer(chunked_List[0], chunked_List[1], "p1"), list(range(qbits)), inplace=True)
-        qbits = qbits / 2
-
-    [0,1,2,3],[4,5,6,7]
-        list[0]    list[1]
-
-    [0,1],[2,3]
-    list[0]   list[1]
-
-
-    # Second Convolutional Layer
-    ansatz.compose(conv_layer(4, "c2"), list(range(4, 8)), inplace=True)
-
-    # Second Pooling Layer
-    ansatz.compose(pool_layer([0, 1], [2, 3], "p2"), list(range(4, 8)), inplace=True)
-
-    # Third Convolutional Layer
-    ansatz.compose(conv_layer(2, "c3"), list(range(6, 8)), inplace=True)
-
-    # Third Pooling Layer
-    ansatz.compose(pool_layer([0], [1], "p3"), list(range(6, 8)), inplace=True)
+    for i in range(math.log2(qbits) + 1, 0, -1):
+        ansatz.compose(conv_layer(pow(2,i), 'c' + str(i)), list(range(qbits)), inplace=True)
+        ansatz.compose(pool_layer(list(range(0,pow(2,i)//2)), list(range(pow(2,i)//2, pow(2,i))), param_prefix="p1"), list(range()), inplace=True)
 
     # Combining the feature map and ansatz
     circuit = QuantumCircuit(8)

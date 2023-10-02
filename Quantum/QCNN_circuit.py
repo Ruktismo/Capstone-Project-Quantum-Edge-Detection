@@ -8,13 +8,50 @@ from qiskit.utils import algorithm_globals
 from qiskit_machine_learning.neural_networks import EstimatorQNN
 
 import logging
+import os
+
+from Quantum import QED
 
 log = logging.getLogger(__name__)
 
 # Set the seed for qiskit so randomness is controlled between runs.
 algorithm_globals.random_seed = 12345
 
+
+
+#function to call another file (QED)
+def execute_python_file(QED):
+    try:
+        os.system(f'python {QED}')
+    except FileNotFoundError:
+        print(f"ERROR: File '{QED}' does not exist!")
+
+
 # TODO Maybe have all circuit functions be in this file?
+#Function for building circuit; used one of glen's files for reference then adjusted
+#will grow for any number of qubits needed (same circuit for horizontal/vertical)
+def build_qed_circuit(img):
+    # Create the circuit for horizontal scan
+    qc = QuantumCircuit(QED.total_qb)
+    qc.initialize(img, range(1, QED.total_qb))
+    qc.barrier()
+    qc.h(0)
+    qc.barrier()
+
+    # Decrement gate - START
+    # TODO find a way to have the decrement gate NOT processes the borders of the img.
+    qc.x(0)
+    qc.cx(0, 1)
+    qc.ccx(0, 1, 2)
+    for c in range(3, QED.total_qb):
+        qc.mcx([b for b in range(c)], c)
+    # Decrement gate - END
+    qc.barrier()
+    qc.h(0)
+    qc.measure_all()
+
+    return qc
+
 
 # This is a convolution on 2-qbits. It will be used to expand to an n-qbit convolution later.
 # params: ParameterVector for changeable values in circuit.

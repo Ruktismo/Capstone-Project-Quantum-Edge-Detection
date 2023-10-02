@@ -12,6 +12,8 @@ from concurrent.futures import ProcessPoolExecutor as Pool
 import numpy as np
 import configparser
 
+from Quantum import QCNN_circuit
+
 # get logger, use __name__ to prevent conflict
 log = logging.getLogger(__name__)
 log.info("setting up QED")
@@ -52,31 +54,6 @@ def amplitude_encode(img_data):
     return ret
 
 
-#Function for building circuit; used one of glen's files for reference then adjusted
-#will grow for any number of qubits needed (same circuit for horizontal/vertical)
-def build_qed_circuit(img):
-    # Create the circuit for horizontal scan
-    qc = QuantumCircuit(total_qb)
-    qc.initialize(img, range(1, total_qb))
-    qc.barrier()
-    qc.h(0)
-    qc.barrier()
-
-    # Decrement gate - START
-    # TODO find a way to have the decrement gate NOT processes the borders of the img.
-    qc.x(0)
-    qc.cx(0, 1)
-    qc.ccx(0, 1, 2)
-    for c in range(3,total_qb):
-        qc.mcx([b for b in range(c)], c)
-    # Decrement gate - END
-    qc.barrier()
-    qc.h(0)
-    qc.measure_all()
-
-    return qc
-
-
 # 16x16 image simulation
 # np.array: Image to be processed
 # int: index of what chunk this image is
@@ -88,9 +65,9 @@ def process16x16(data: (np.array, int)):
     image_norm_v = amplitude_encode(data[0].T)  # Image transpose for the vertical, so vertical is treated like horizontal
 
     # Create the circuit for horizontal scan
-    qc_h = build_qed_circuit(image_norm_h)
+    qc_h = QCNN_circuit.build_qed_circuit(image_norm_h)
     # Create the circuit for vertical scan
-    qc_v = build_qed_circuit(image_norm_v)
+    qc_v = QCNN_circuit.build_qed_circuit(image_norm_v)
 
     # Combine both circuits into a single list
     circ_list = [qc_h, qc_v]

@@ -7,9 +7,10 @@ This file coordinates all components of the project and handles timeing each sec
 import logging
 import time
 # Our modules used
-import Quantum.QED as QED
+from Quantum.QED import default_QED as QED
 
 # set up logger file and formatting.
+# TODO fix logging to only display our modules
 logging.basicConfig(filename="Latest_Run.log", filemode='w', encoding='utf-8', level=logging.DEBUG,
                     format="%(asctime)s : %(levelname)s : %(name)s : %(funcName)s : %(message)s",
                     datefmt='%m/%d %I:%M:%S %p')
@@ -37,7 +38,7 @@ def get_photo():
 def get_edges(pic):
     log.debug("Getting edges of photo")
     start_time = time.perf_counter()
-    edge_img = QED.QED(pic)
+    edge_img = QED.run_QED(pic)
     step_2 = time.perf_counter() - start_time
     log.debug(f"Got edges of photo in {step_2:0.4f}sec")
     return edge_img

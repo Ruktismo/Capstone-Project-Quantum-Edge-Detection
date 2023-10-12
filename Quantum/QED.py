@@ -18,196 +18,209 @@ from Quantum import QCNN_circuit
 log = logging.getLogger(__name__)
 log.info("setting up QED")
 
-# Create a configparser object
-config = configparser.ConfigParser()
-# Read an existing configuration file
-config.read_file(open("./../Config.ini"))
-# from config group QED get var CHUNK_SIZE
-CHUNK_SIZE = int(config['QED']['CHUNK_SIZE'])  # should be int, needs casting since all config are read as str
-THREAD_COUNT = int(config['QED']['QED_THREAD_COUNT'])
 
-# TODO Error check for config
+class QED:
+    # Do QED with args from config file
+    def __init__(self):
+        # Create a configparser object
+        config = configparser.ConfigParser()
+        # Read an existing configuration file
+        config.read_file(open("./../Config.ini"))
+        # from config group QED get var CHUNK_SIZE
+        self.CHUNK_SIZE = int(config['QED']['CHUNK_SIZE'])  # should be int, needs casting since all config are read as str
+        self.THREAD_COUNT = int(config['QED']['QED_THREAD_COUNT'])
+        # TODO Error check for config
+        self.data_qb = m.ceil(m.log2(self.CHUNK_SIZE ** 2))  # Set to ceil(log_2(image.CropSize))
+        self.anc_qb = 1  # This is the auxiliary qubit.
+        self.total_qb = self.data_qb + self.anc_qb  # total qubits
+        self.SHOTS = 2 ** 10  # Number of runs to do. More runs gets better quality. But also more time
 
-# Initialize global variable for number of qubits
-data_qb = m.ceil(m.log2(CHUNK_SIZE ** 2)) # Set to ceil(log_2(image.CropSize))
-anc_qb = 1  # This is the auxiliary qubit.
-total_qb = data_qb + anc_qb  #total qubits
+    # custom start config
+    def __init__(self, chunkSize, shots, threadCount):
+        self.CHUNK_SIZE = chunkSize
+        self.THREAD_COUNT = threadCount
+        self.SHOTS = shots  # Number of runs to do. More runs gets better quality. But also more time
+        self.data_qb = m.ceil(m.log2(self.CHUNK_SIZE ** 2))  # Set to ceil(log_2(image.CropSize))
+        self.anc_qb = 1  # This is the auxiliary qubit.
+        self.total_qb = self.data_qb + self.anc_qb  # total qubits
 
-# Convert the raw pixel values to probability amplitudes
-# i.e. sum of all pixels is one
-def amplitude_encode(img_data):
-    # Calculate the RMS value
-    rms = np.sqrt(np.sum(img_data ** 2))  # sum up all pixels to get total
+    # Convert the raw pixel values to probability amplitudes
+    # i.e. sum of all pixels is one
+    def amplitude_encode(self, img_data):
+        # Calculate the RMS value
+        rms = np.sqrt(np.sum(img_data ** 2))  # sum up all pixels to get total
 
-    # if img has non-zero pixels
-    if rms != 0:
-        # Create normalized image
-        image_norm = []
-        for arr in img_data:
-            for ele in arr:
-                image_norm.append(ele / rms)  # divide pixel by total to get probability
-    else:
-        return None  # if rms is zero then chunk is empty
-
-    # Return the normalized image as a numpy array
-    ret = np.array(image_norm)
-    return ret
-
-
-# 16x16 image simulation
-# np.array: Image to be processed
-# int: index of what chunk this image is
-def process16x16(data: (np.array, int)):
-    # Get horizontal and vertical amplitudes encoded pixel values
-    image_norm_h = amplitude_encode(data[0])
-    if image_norm_h is None:
-        return None, data[1]  # if chunk is all zeros then there is nothing to process
-    image_norm_v = amplitude_encode(data[0].T)  # Image transpose for the vertical, so vertical is treated like horizontal
-
-    # Create the circuit for horizontal scan
-    qc_h = QCNN_circuit.build_qed_circuit(image_norm_h)
-    # Create the circuit for vertical scan
-    qc_v = QCNN_circuit.build_qed_circuit(image_norm_v)
-
-    # Combine both circuits into a single list
-    circ_list = [qc_h, qc_v]
-
-    #using QASM_SIMULATOR
-    SHOTS = 2**10  # Number of runs to do. More runs gets better quality. But also more time
-    backend = Aer.get_backend('statevector_simulator')
-    job = execute(circ_list, backend, shots=SHOTS)  # Run job
-    result = job.result().get_counts()  # Get results
-
-    # Make dic with keys that are binaries from 0 to 2^total_qb. with values of 0.0 to start.
-    # This is done since IBM will not return Qbit strings that are 0.
-    # So we need to map the results to the full image space.
-    # Formatted String: 0 (for padding zeros) {total_qb} (for bit-string size) b (to format from int to binary)
-    counts_h = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
-    counts_v = {f'{k:0{total_qb}b}': 0.0 for k in range(2 ** total_qb)}
-
-    # Transfer all known values form experiment results to dic.
-    # Normalising to the number of shots to keep results between [0,1].
-    for k, v in result[0].items():
-        counts_h[k] = v / SHOTS
-    for k, v in result[1].items():
-        counts_v[k] = v / SHOTS
-
-    # Extracting counts for odd-numbered states. i.e. data that we are interested in
-    # And reshaping back into 2D image.
-    edge_scan_h = np.array([counts_h[f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)])\
-                    .reshape(CHUNK_SIZE, CHUNK_SIZE)  #horizontal
-    edge_scan_v = np.array([counts_v[f'{2 * i + 1:0{total_qb}b}'] for i in range(2 ** data_qb)])\
-                    .reshape(CHUNK_SIZE, CHUNK_SIZE).T  #transpose vertical back to right side up
-
-    # Combine H and V scans to get full edge detection image
-    edge_scan_sim = edge_scan_h + edge_scan_v
-
-    return edge_scan_sim, data[1]
-
-
-#Function to crop the image
-def crop(image, c_size):
-    # quick error check for split functions.
-    if (image.shape[0] % c_size != 0) or (image.shape[1] % c_size != 0):
-        log.error("ERROR\n\tImage is not cleanly dividable by chunk size.")
-        exit(-1)
-
-    v_chunks = image.shape[0] / c_size
-    h_chunks = image.shape[1] / c_size
-
-    # Split the image vertically then pump all vertical slices into hsplit to get square chunks
-    nested_chunks = [np.hsplit(vs, h_chunks) for vs in np.vsplit(image, v_chunks)]
-
-    # The split process leaves us with the chunks in a nested array, flatten to a list
-    img_chunks = [item for sublist in nested_chunks for item in sublist]
-
-    return img_chunks
-
-
-def QED(pic):
-    # attempt to open image and/or convert to np.array
-    if isinstance(pic, Image.Image):
-        image_RGB = np.asarray(pic)
-    elif os.path.isfile(pic):
-        img = Image.open(pic)
-        image_RGB = np.asarray(img)
-    elif isinstance(pic, np.ndarray):
-        image_RGB = pic  # nothing to do just checking its one of the valid types
-    else:
-        log.warning("Invalid type given to QED\n"
-                    "Expected types: PIL.Image.Image, File Path to image, NumPy Array\n"
-                    f"Got: {type(pic)}")
-        return None
-
-    # The image is in RGB, but we only need B&W
-    # Convert the RBG component of the image to B&W image, as a numpy (uint8) array
-    image = []
-    for i in range(image_RGB.shape[0]):
-        image.append([])
-        for j in range(image_RGB.shape[1]):
-            image[i].append(image_RGB[i][j][0] / 255.0)  # TODO? clamp to 0 or 1
-
-    image = np.array(image)
-
-    # Then crop the result into chunks
-    croped_imgs = crop(image, CHUNK_SIZE)
-# Processing Start
-    is_empty = [None] * len(croped_imgs)
-    edge_detected_image = [None] * len(croped_imgs)
-    tic = time.perf_counter()
-    with Pool(max_workers=THREAD_COUNT) as pool:
-        results = pool.map(process16x16, [(croped_imgs[N],N) for N in range(len(croped_imgs))])
-        for r in results:
-            log.debug(f"Chunk {r[1]} processed")
-            if r[0] is None:
-                is_empty[r[1]] = True
-            else:
-                is_empty[r[1]] = False
-                edge_detected_image[r[1]] = r[0]
-    # not all chunks may be processed, so shorten list to only be processed chunks
-    edge_detected_image = [c for c in edge_detected_image if isinstance(c, np.ndarray)]
-    log.debug(f"Nones count:{len([e for e in is_empty if e])}")  # Count how many where not processed
-    # calculate ~time it will take to run
-    tok = time.perf_counter()
-    t = tok - tic
-    log.debug(f"Total Compile/Run Time: {t:0.4f} seconds")
-# Processing End
-
-    # Stitch the chunks back into one image.
-    # first make empty image
-    ed_image_arr = np.zeros((image_RGB.shape[0], image_RGB.shape[1]))
-    res = 0  # index of current result
-
-    # Iterator for getting the indexes for pasting
-    # defined within QED, so it can use image.shape and chunk size without issue
-    def ULBox_iterator():
-        for upper_left_x_cord in range(0, image.shape[0], CHUNK_SIZE):
-            for upper_left_y_cord in range(0, image.shape[1], CHUNK_SIZE):
-                yield upper_left_x_cord, upper_left_y_cord
-    box_gen = ULBox_iterator()  # create a generator obj to give the cords
-
-    # loop for upper left box for each chunk
-    for i in range(len(is_empty)):
-        # if there was data that was processed
-        if not is_empty[i]:
-            # paste it in to the image
-            # find upper left cords of chunk based off of chunk index
-            ULBox = next(box_gen)  # ask the generator for the next set of cords
-            # paste ed_results into ed_image, cutting out edge pixels
-            ed_image_arr[ULBox[0]+1:ULBox[0] + CHUNK_SIZE - 1, ULBox[1] + 1:ULBox[1] + CHUNK_SIZE - 1] += \
-                edge_detected_image[res][1:CHUNK_SIZE - 1, 1:CHUNK_SIZE - 1]
-
-            res += 1  # move res to next result
-        # If not then leave as default black
+        # if img has non-zero pixels
+        if rms != 0:
+            # Create normalized image
+            image_norm = []
+            for arr in img_data:
+                for ele in arr:
+                    image_norm.append(ele / rms)  # divide pixel by total to get probability
         else:
-            pass
+            return None  # if rms is zero then chunk is empty
 
-    # return edge detected image.
-    return ed_image_arr
+        # Return the normalized image as a numpy array
+        ret = np.array(image_norm)
+        return ret
 
+    # 16x16 image simulation
+    # np.array: Image to be processed
+    # int: index of what chunk this image is
+    def process16x16(self, data: (np.array, int)):
+        # Get horizontal and vertical amplitudes encoded pixel values
+        image_norm_h = self.amplitude_encode(data[0])
+        if image_norm_h is None:
+            return None, data[1]  # if chunk is all zeros then there is nothing to process
+        image_norm_v = self.amplitude_encode(data[0].T)
+        # Image transpose for the vertical, so vertical is treated like horizontal
+
+        # Create the circuit for horizontal scan
+        qc_h = QCNN_circuit.build_qed_circuit(image_norm_h)
+        # Create the circuit for vertical scan
+        qc_v = QCNN_circuit.build_qed_circuit(image_norm_v)
+
+        # Combine both circuits into a single list
+        circ_list = [qc_h, qc_v]
+
+        # using QASM_SIMULATOR
+
+        backend = Aer.get_backend('statevector_simulator')
+        job = execute(circ_list, backend, shots=self.SHOTS)  # Run job
+        result = job.result().get_counts()  # Get results
+
+        # Make dic with keys that are binaries from 0 to 2^total_qb. with values of 0.0 to start.
+        # This is done since IBM will not return Qbit strings that are 0.
+        # So we need to map the results to the full image space.
+        # Formatted String: 0 (for padding zeros) {total_qb} (for bit-string size) b (to format from int to binary)
+        counts_h = {f'{k:0{self.total_qb}b}': 0.0 for k in range(2 ** self.total_qb)}
+        counts_v = {f'{k:0{self.total_qb}b}': 0.0 for k in range(2 ** self.total_qb)}
+
+        # Transfer all known values form experiment results to dic.
+        # Normalising to the number of shots to keep results between [0,1].
+        for k, v in result[0].items():
+            counts_h[k] = v / self.SHOTS
+        for k, v in result[1].items():
+            counts_v[k] = v / self.SHOTS
+
+        # Extracting counts for odd-numbered states. i.e. data that we are interested in
+        # And reshaping back into 2D image.
+        edge_scan_h = np.array([counts_h[f'{2 * i + 1:0{self.total_qb}b}'] for i in range(2 ** self.data_qb)]) \
+            .reshape(self.CHUNK_SIZE, self.CHUNK_SIZE)  # horizontal
+        edge_scan_v = np.array([counts_v[f'{2 * i + 1:0{self.total_qb}b}'] for i in range(2 ** self.data_qb)]) \
+            .reshape(self.CHUNK_SIZE, self.CHUNK_SIZE).T  # transpose vertical back to right side up
+
+        # Combine H and V scans to get full edge detection image
+        edge_scan_sim = edge_scan_h + edge_scan_v
+
+        return edge_scan_sim, data[1]
+
+    #Function to crop the image
+    def crop(self, image):
+        # quick error check for split functions.
+        if (image.shape[0] % self.CHUNK_SIZE != 0) or (image.shape[1] % self.CHUNK_SIZE != 0):
+            log.error("ERROR\n\tImage is not cleanly dividable by chunk size.")
+            exit(-1)
+
+        v_chunks = image.shape[0] / self.CHUNK_SIZE
+        h_chunks = image.shape[1] / self.CHUNK_SIZE
+
+        # Split the image vertically then pump all vertical slices into hsplit to get square chunks
+        nested_chunks = [np.hsplit(vs, h_chunks) for vs in np.vsplit(image, v_chunks)]
+
+        # The split process leaves us with the chunks in a nested array, flatten to a list
+        img_chunks = [item for sublist in nested_chunks for item in sublist]
+
+        return img_chunks
+
+    def run_QED(self, pic):
+        # attempt to open image and/or convert to np.array
+        if isinstance(pic, Image.Image):
+            image_RGB = np.asarray(pic)
+        elif os.path.isfile(pic):
+            img = Image.open(pic)
+            image_RGB = np.asarray(img)
+        elif isinstance(pic, np.ndarray):
+            image_RGB = pic  # nothing to do just checking its one of the valid types
+        else:
+            log.warning("Invalid type given to QED\n"
+                        "Expected types: PIL.Image.Image, File Path to image, NumPy Array\n"
+                        f"Got: {type(pic)}")
+            return None
+
+        # The image is in RGB, but we only need B&W
+        # Convert the RBG component of the image to B&W image, as a numpy (uint8) array
+        image = []
+        for i in range(image_RGB.shape[0]):
+            image.append([])
+            for j in range(image_RGB.shape[1]):
+                image[i].append(image_RGB[i][j][0] / 255.0)
+
+        image = np.array(image)
+
+        # Then crop the result into chunks
+        croped_imgs = self.crop(image, self.CHUNK_SIZE)
+    # Processing Start
+        is_empty = [None] * len(croped_imgs)
+        edge_detected_image = [None] * len(croped_imgs)
+        tic = time.perf_counter()
+        with Pool(max_workers=self.THREAD_COUNT) as pool:
+            results = pool.map(self.process16x16, [(croped_imgs[N],N) for N in range(len(croped_imgs))])
+            for r in results:
+                log.debug(f"Chunk {r[1]} processed")
+                if r[0] is None:
+                    is_empty[r[1]] = True
+                else:
+                    is_empty[r[1]] = False
+                    edge_detected_image[r[1]] = r[0]
+        # not all chunks may be processed, so shorten list to only be processed chunks
+        edge_detected_image = [c for c in edge_detected_image if isinstance(c, np.ndarray)]
+        log.debug(f"Nones count:{len([e for e in is_empty if e])}")  # Count how many where not processed
+        # calculate ~time it will take to run
+        tok = time.perf_counter()
+        t = tok - tic
+        log.debug(f"Total Compile/Run Time: {t:0.4f} seconds")
+    # Processing End
+
+        # Stitch the chunks back into one image.
+        # first make empty image
+        ed_image_arr = np.zeros((image_RGB.shape[0], image_RGB.shape[1]))
+        res = 0  # index of current result
+
+        # Iterator for getting the indexes for pasting
+        # defined within QED, so it can use image.shape and chunk size without issue
+        def ULBox_iterator():
+            for upper_left_x_cord in range(0, image.shape[0], self.CHUNK_SIZE):
+                for upper_left_y_cord in range(0, image.shape[1], self.CHUNK_SIZE):
+                    yield upper_left_x_cord, upper_left_y_cord
+        box_gen = ULBox_iterator()  # create a generator obj to give the cords
+
+        # loop for upper left box for each chunk
+        for i in range(len(is_empty)):
+            # if there was data that was processed
+            if not is_empty[i]:
+                # paste it in to the image
+                # find upper left cords of chunk based off of chunk index
+                ULBox = next(box_gen)  # ask the generator for the next set of cords
+                # paste ed_results into ed_image, cutting out edge pixels
+                ed_image_arr[ULBox[0]+1:ULBox[0] + self.CHUNK_SIZE - 1, ULBox[1] + 1:ULBox[1] + self.CHUNK_SIZE - 1] += \
+                    edge_detected_image[res][1:self.CHUNK_SIZE - 1, 1:self.CHUNK_SIZE - 1]
+
+                res += 1  # move res to next result
+            # If not then leave as default black
+            else:
+                pass
+
+        # return edge detected image.
+        return ed_image_arr
+
+
+default_QED = QED()  # static reference for default configuration
 
 def main():
-    processed = QED("LEFT.jpg")
+    # TODO make this run QED off of argparser
+    qed = QED()
+    processed = qed.run_QED("LEFT.jpg")
     processed *= 1000000
     img = Image.fromarray(processed).convert("L")
     img.save("QED_LEFT2.jpg")

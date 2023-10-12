@@ -10,6 +10,7 @@ import time
 import Quantum.QED as QED
 import Robot.middleware as Robot
 from random import *
+from Neural_Network.trainer import NN
 
 # set up logger file and formatting.
 logging.basicConfig(filename="Latest_Run.log", filemode='w', encoding='utf-8', level=logging.DEBUG,
@@ -50,7 +51,7 @@ def get_edges(pic=None):
 def decide_drive_command(edge_pic):
     log.debug("Sending to Neural Network to decide movement")
     start_time = time.perf_counter()
-    command = choice(["l", "f", "b", "r"])
+    command = NN.predict(edge_pic)  # choice(["l", "f", "b", "r"])  # for random choice
     step_3 = time.perf_counter() - start_time
     log.debug(f"Movement decided in {step_3:0.4f}sec")
     return command

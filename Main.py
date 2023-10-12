@@ -8,6 +8,7 @@ import logging
 import time
 # Our modules used
 from Quantum.QED import default_QED as QED
+from Neural_Network.trainer import NN
 
 # set up logger file and formatting.
 # TODO fix logging to only display our modules
@@ -47,10 +48,10 @@ def get_edges(pic):
 def decide_drive_command(edge_pic):
     log.debug("Sending to Neural Network to decide movement")
     start_time = time.perf_counter()
-
+    command = NN.predict(edge_pic)
     step_3 = time.perf_counter() - start_time
     log.debug(f"Movement decided in {step_3:0.4f}sec")
-    return None
+    return command
 
 
 def send_command(command):

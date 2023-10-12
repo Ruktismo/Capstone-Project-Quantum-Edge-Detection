@@ -98,17 +98,26 @@ def build_qcnn(qbits):
     feature_map = ZFeatureMap(qbits)
 
     ansatz = QuantumCircuit(qbits, name="Ansatz")
-
-    for i in range(math.log2(qbits) + 1, 0, -1):
-        ansatz.compose(conv_layer(pow(2,i), 'c' + str(i)), list(range(qbits)), inplace=True)
-        ansatz.compose(pool_layer(list(range(0,pow(2,i)//2)), list(range(pow(2,i)//2, pow(2,i))), param_prefix="p1"), list(range()), inplace=True)
+    layer = 1
+    i = qbits
+    ansatz.compose(conv_layer(i, 'c' + str(layer)), list(range(qbits)), inplace=True)
+    ansatz.compose(pool_layer(list(range(0, i // 2)), list(range(i // 2, i)), param_prefix="p"+str(layer)),
+                   list(range(0, qbits)), inplace=True)
+    layer += 1
+    i = i // 2
+    while i > 1:
+        ansatz.compose(conv_layer(i, 'c'+str(layer)), list(range(qbits-i,qbits)), inplace=True)
+        ansatz.compose(pool_layer(list(range(0,i//2)), list(range(i//2, i)), param_prefix="p"+str(layer)),
+                        list(range(qbits-i,qbits)), inplace=True)
+        layer += 1
+        i = i // 2
 
     # Combining the feature map and ansatz
-    circuit = QuantumCircuit(8)
-    circuit.compose(feature_map, range(8), inplace=True)
-    circuit.compose(ansatz, range(8), inplace=True)
+    circuit = QuantumCircuit(qbits)
+    circuit.compose(feature_map, range(qbits), inplace=True)
+    circuit.compose(ansatz, range(qbits), inplace=True)
 
-    observable = SparsePauliOp.from_list([("Z" + "I" * 7, 1)])
+    observable = SparsePauliOp.from_list([("Z" + "I" * (qbits-1), 1)])
 
     # we decompose the circuit for the QNN to avoid additional data copying
     qnn = EstimatorQNN(
@@ -117,4 +126,6 @@ def build_qcnn(qbits):
         input_params=feature_map.parameters,
         weight_params=ansatz.parameters,
     )
+    #circuit.draw("mpl")
+
     return qnn

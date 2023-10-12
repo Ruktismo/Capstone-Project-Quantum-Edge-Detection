@@ -15,7 +15,7 @@ from qiskit_machine_learning.algorithms.classifiers import NeuralNetworkClassifi
 # so after training we can use the test set to eval on data it has not seen before
 from sklearn.model_selection import train_test_split
 
-from Quantum.QCNN_circuit import build_qcnn
+from Quantum.QCNN_circuit_nqubits import build_qcnn
 
 log = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ def train_qcnn(training_folder:str, start_point_json=None, output_file_name:str=
         initial_point = None
     
     classifier = NeuralNetworkClassifier(
-                    build_qcnn(),
+                    build_qcnn(8),
                     optimizer=COBYLA(maxiter=200),  # Set max iterations here
                     callback=callback_graph,
                     initial_point=initial_point,

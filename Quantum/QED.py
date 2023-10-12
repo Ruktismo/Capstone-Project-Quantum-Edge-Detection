@@ -1,6 +1,7 @@
 # Importing standard Qiskit libraries and configuring account
 # Libs needed:
 #   matplotlib, pillow, qiskit, pylatexenc, qiskit-ibm-runtime, qiskit-aer
+
 from qiskit import QuantumCircuit, execute, Aer
 import logging
 import os
@@ -11,6 +12,7 @@ import math as m
 from concurrent.futures import ProcessPoolExecutor as Pool
 import numpy as np
 import configparser
+import argparse
 
 from Quantum import QCNN_circuit
 
@@ -64,6 +66,31 @@ class QED:
         ret = np.array(image_norm)
         return ret
 
+    # TODO Maybe have all circuit functions be in this file?
+    # Function for building circuit; used one of glen's files for reference then adjusted
+    # will grow for any number of qubits needed (same circuit for horizontal/vertical)
+    def build_qed_circuit(self, img):
+        # Create the circuit for horizontal scan
+        qc = QuantumCircuit(self.total_qb)
+        qc.initialize(img, range(1, self.total_qb))
+        qc.barrier()
+        qc.h(0)
+        qc.barrier()
+
+        # Decrement gate - START
+        # TODO find a way to have the decrement gate NOT processes the borders of the img.
+        qc.x(0)
+        qc.cx(0, 1)
+        qc.ccx(0, 1, 2)
+        for c in range(3, self.total_qb):
+            qc.mcx([b for b in range(c)], c)
+        # Decrement gate - END
+        qc.barrier()
+        qc.h(0)
+        qc.measure_all()
+
+        return qc
+
     # 16x16 image simulation
     # np.array: Image to be processed
     # int: index of what chunk this image is
@@ -76,9 +103,9 @@ class QED:
         # Image transpose for the vertical, so vertical is treated like horizontal
 
         # Create the circuit for horizontal scan
-        qc_h = QCNN_circuit.build_qed_circuit(image_norm_h)
+        qc_h = self.build_qed_circuit(image_norm_h)
         # Create the circuit for vertical scan
-        qc_v = QCNN_circuit.build_qed_circuit(image_norm_v)
+        qc_v = self.build_qed_circuit(image_norm_v)
 
         # Combine both circuits into a single list
         circ_list = [qc_h, qc_v]
@@ -218,12 +245,40 @@ class QED:
 default_QED = QED()  # static reference for default configuration
 
 def main():
-    # TODO make this run QED off of argparser
-    qed = QED()
-    processed = qed.run_QED("LEFT.jpg")
+    config = configparser.ConfigParser()
+    config.read_file(open("./../Config.ini"))
+
+    parser = argparse.ArgumentParser(description="Run quantum edge detection (QED) on a photo")
+    # TODO use configparser for default values
+    parser.add_argument('-f','--file',
+                        help="File to be processed",
+                        required=True)
+    parser.add_argument('-t', '--threads', type=int,
+                        default=int(config['QED']['QED_THREAD_COUNT']),
+                        help="Max threads that QED can use")
+    parser.add_argument('-c', '--chunk', type=int,
+                        default=int(config['QED']['CHUNK_SIZE']),
+                        help="Square size to chop up image with. Must be dividable by the with and height of the image.")
+    parser.add_argument('-s', '--shots', type=int,
+                        default=int(config['QED']['SHOTS']),
+                        help="Number of shots to run in the simulator. More shots will take longer to run.")
+    parser.add_argument('-o', '--output',
+                        default=None,
+                        help="Filename/location to save the result")
+    parser.add_argument('-S', '--Scale', type=int,
+                        default=1000000,
+                        help="Scaling factor to make the image more visible")
+
+    args = parser.parse_args()
+
+    qed = QED(args.chunk, args.shots, args.threads)
+    print(f"Running QED on: {args.file}")
+    processed = qed.run_QED(args.file)
     processed *= 1000000
+    print(f"QED finished, saving as: {args.file}")
     img = Image.fromarray(processed).convert("L")
-    img.save("QED_LEFT2.jpg")
+    img.save(args.output)
+
 
 if __name__ == "__main__":
     main()

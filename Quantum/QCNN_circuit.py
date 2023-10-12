@@ -27,32 +27,6 @@ def execute_python_file(QED):
         print(f"ERROR: File '{QED}' does not exist!")
 
 
-# TODO Maybe have all circuit functions be in this file?
-#Function for building circuit; used one of glen's files for reference then adjusted
-#will grow for any number of qubits needed (same circuit for horizontal/vertical)
-def build_qed_circuit(img):
-    # Create the circuit for horizontal scan
-    qc = QuantumCircuit(QED.total_qb)
-    qc.initialize(img, range(1, QED.total_qb))
-    qc.barrier()
-    qc.h(0)
-    qc.barrier()
-
-    # Decrement gate - START
-    # TODO find a way to have the decrement gate NOT processes the borders of the img.
-    qc.x(0)
-    qc.cx(0, 1)
-    qc.ccx(0, 1, 2)
-    for c in range(3, QED.total_qb):
-        qc.mcx([b for b in range(c)], c)
-    # Decrement gate - END
-    qc.barrier()
-    qc.h(0)
-    qc.measure_all()
-
-    return qc
-
-
 # This is a convolution on 2-qbits. It will be used to expand to an n-qbit convolution later.
 # params: ParameterVector for changeable values in circuit.
 
@@ -139,19 +113,22 @@ def build_qcnn(qbits):
     ansatz.compose(conv_layer(8, "с1"), list(range(8)), inplace=True)
 
     # First Pooling Layer
-    ansatz.compose(pool_layer([0, 1, 2, 3], [4, 5, 6, 7], "p1"), list(range(8)), inplace=True)
+    ansatz.compose(pool_layer([0, 1, 2, 3], [4, 5, 6, 7], "p1"),
+                   list(range(8)), inplace=True)
 
     # Second Convolutional Layer
     ansatz.compose(conv_layer(4, "c2"), list(range(4, 8)), inplace=True)
 
     # Second Pooling Layer
-    ansatz.compose(pool_layer([0, 1], [2, 3], "p2"), list(range(4, 8)), inplace=True)
+    ansatz.compose(pool_layer([0, 1], [2, 3], "p2"),
+                   list(range(4, 8)), inplace=True)
 
     # Third Convolutional Layer
     ansatz.compose(conv_layer(2, "c3"), list(range(6, 8)), inplace=True)
 
     # Third Pooling Layer
-    ansatz.compose(pool_layer([0], [1], "p3"), list(range(6, 8)), inplace=True)
+    ansatz.compose(pool_layer([0], [1], "p3"),
+                   list(range(6, 8)), inplace=True)
 
     # Combining the feature map and ansatz
     circuit = QuantumCircuit(8)

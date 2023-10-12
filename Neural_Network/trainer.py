@@ -14,6 +14,44 @@ epochs = 150
 
 # TODO add arguments parser
 
+class NerualNetwork:
+    def __init__(self):
+        self.model = Interpreter(model_path="./model.tflite")
+
+        self.model.allocate_tensors()
+
+        self.input_details = self.model.get_input_details()
+        self.output_details = self.model.get_output_details()
+
+    def reload_model(self):
+        self.model = Interpreter(model_path="./model.tflite")
+
+        self.model.allocate_tensors()
+
+        self.input_details = self.model.get_input_details()
+        self.output_details = self.model.get_output_details()
+
+    def predict(self, pic):
+        P = pic[np.newaxis, :, :, np.newaxis]  # model is expecting a shape of (0, imgX, imgY, 0)
+        # set input for prediction
+        self.model.set_tensor(self.input_details[0]["index"], P)
+        # preform prediction
+        self.model.invoke()
+        # get prediction
+        prediction = self.model.get_tensor(self.output_details[0]["index"])
+        # prediction is an array of probabilities (0.0 to 1.0) of the format ["Right", "Straight", "Left"]
+        print(prediction)
+        i = prediction.index(max(prediction))
+        if i == 0:
+            return 'r'
+        elif i == 1:
+            return 's'
+        elif i == 2:
+            return 'l'
+
+
+NN = NerualNetwork()
+
 data_path = r"/Users/mgriffin/Documents/CapstoneRepo/Capstone-Project-AI-Robot-Car-Maze-Navigation/dataset_12_12_00_877387"
 
 

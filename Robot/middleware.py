@@ -9,11 +9,13 @@ robo_server = "192.168.16.2"
 robo_port = 22
 robo_user = "pi"
 robo_password = "raspberry"
+fps = 12
 
 robo_control_path = "Desktop/newCapstone/middleware/devices/"
 robo_control_base = "python3 controller.py"
 robo_photo_path = "/tmp/pics"
-robo_last_photo = " "
+robo_last_photo = "lastPic"
+robo_cam_cmd = f"sudo LD_LIBRARY_PATH='pwd' ./mjpg_streamer -i \"input_uvc.so -d /dev/video0 -f {fps}\" -o \"./output_file.so -f {robo_photo_path} -l {robo_last_photo}\""
 
 robo_forward = robo_control_base + " --command f --runtime 0"
 robo_backwards = robo_control_base + " --command b --runtime 0"
@@ -35,9 +37,15 @@ class Connection:
         self.ssh.connect(robo_server, username=robo_user, password=robo_password, port=robo_port)
 
         self.sftp = self.ssh.open_sftp()
-        #mkdir
-        self.sftp.chdir(robo_photo_path)
-        #start streamer to made dir
+
+        try:
+            self.sftp.chdir(robo_photo_path)  # Test if remote_path exists
+        except IOError:
+            self.sftp.mkdir(robo_photo_path)  # Create remote_path
+            self.sftp.chdir(robo_photo_path)
+
+        self.ssh.exec_command(f"cd /tmp/pics ; rm ./*;")
+        self.ssh.exec_command(f"cd ~/mjpg-streamer/mjpg-streamer-experimental/ ; {robo_cam_cmd}")
 
     def exec_control_command(self, command):
         match command:

@@ -14,31 +14,20 @@ import numpy as np
 import configparser
 import argparse
 
-from Quantum import QCNN_circuit
+# get logger
+log = logging.getLogger("Quantum_Edge_Detection")
 
-# get logger, use __name__ to prevent conflict
-log = logging.getLogger(__name__)
-log.info("setting up QED")
-
+# Create a configparser object
+config = configparser.ConfigParser()
+# Read an existing configuration file
+config.read_file(open("./../Config.ini"))  # TODO need way to find Config.ini relative to cwd
 
 class QED:
-    # Do QED with args from config file
-    def __init__(self):
-        # Create a configparser object
-        config = configparser.ConfigParser()
-        # Read an existing configuration file
-        config.read_file(open("./../Config.ini"))
-        # from config group QED get var CHUNK_SIZE
-        self.CHUNK_SIZE = int(config['QED']['CHUNK_SIZE'])  # should be int, needs casting since all config are read as str
-        self.THREAD_COUNT = int(config['QED']['QED_THREAD_COUNT'])
-        # TODO Error check for config
-        self.data_qb = m.ceil(m.log2(self.CHUNK_SIZE ** 2))  # Set to ceil(log_2(image.CropSize))
-        self.anc_qb = 1  # This is the auxiliary qubit.
-        self.total_qb = self.data_qb + self.anc_qb  # total qubits
-        self.SHOTS = 2 ** 10  # Number of runs to do. More runs gets better quality. But also more time
-
-    # custom start config
-    def __init__(self, chunkSize, shots, threadCount):
+    # Do QED with args from config file if none are provided
+    def __init__(self, chunkSize=int(config['QED']['CHUNK_SIZE']),
+                 shots=int(config['QED']['SHOTS']),
+                 threadCount=int(config['QED']['QED_THREAD_COUNT'])):
+        log.info("setting up QED")
         self.CHUNK_SIZE = chunkSize
         self.THREAD_COUNT = threadCount
         self.SHOTS = shots  # Number of runs to do. More runs gets better quality. But also more time
@@ -66,7 +55,6 @@ class QED:
         ret = np.array(image_norm)
         return ret
 
-    # TODO Maybe have all circuit functions be in this file?
     # Function for building circuit; used one of glen's files for reference then adjusted
     # will grow for any number of qubits needed (same circuit for horizontal/vertical)
     def build_qed_circuit(self, img):
@@ -186,8 +174,9 @@ class QED:
         image = np.array(image)
 
         # Then crop the result into chunks
-        croped_imgs = self.crop(image, self.CHUNK_SIZE)
+        croped_imgs = self.crop(image)
     # Processing Start
+        log.debug("Starting up worker pool")
         is_empty = [None] * len(croped_imgs)
         edge_detected_image = [None] * len(croped_imgs)
         tic = time.perf_counter()
@@ -195,15 +184,21 @@ class QED:
             results = pool.map(self.process16x16, [(croped_imgs[N],N) for N in range(len(croped_imgs))])
             for r in results:
                 log.debug(f"Chunk {r[1]} processed")
+                print(f"Chunk {r[1]} processed")
                 if r[0] is None:
                     is_empty[r[1]] = True
                 else:
                     is_empty[r[1]] = False
                     edge_detected_image[r[1]] = r[0]
+        log.debug("All workers finished")
         # not all chunks may be processed, so shorten list to only be processed chunks
         edge_detected_image = [c for c in edge_detected_image if isinstance(c, np.ndarray)]
-        log.debug(f"Nones count:{len([e for e in is_empty if e])}")  # Count how many where not processed
-        # calculate ~time it will take to run
+        nonesCount = len([e for e in is_empty if e])
+        if nonesCount == len(is_empty):
+            log.error("Image is entirely empty")
+            exit(-7)
+        log.debug(f"Nones count:{nonesCount}")  # Count how many where not processed
+        # calculate ~time it took to run
         tok = time.perf_counter()
         t = tok - tic
         log.debug(f"Total Compile/Run Time: {t:0.4f} seconds")
@@ -241,8 +236,6 @@ class QED:
         # return edge detected image.
         return ed_image_arr
 
-
-default_QED = QED()  # static reference for default configuration
 
 def main():
     config = configparser.ConfigParser()
@@ -282,3 +275,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+    #default_QED = QED()
+    #default_QED.run_QED("./LEFT.jpg")

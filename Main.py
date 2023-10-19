@@ -4,26 +4,38 @@ Main Controller
 This file coordinates all components of the project and handles timeing each section.
 """
 # Standard modules used
+import sys
 import logging
 import time
-# Our modules used
-import Quantum.QED as QED
-import Robot.middleware as Robot
 from random import *
-from Neural_Network.trainer import NN
+# Our modules used
+from Quantum.Quantum_Edge_Detection import QED
+import Robot.middleware as Robot
+from Neural_Network.trainer import NeuralNetwork
 
 # set up logger file and formatting.
-logging.basicConfig(filename="Latest_Run.log", filemode='w', encoding='utf-8', level=logging.DEBUG,
-                    format="%(asctime)s : %(levelname)s : %(name)s : %(funcName)s : %(message)s",
-                    datefmt='%m/%d %I:%M:%S %p')
-log = logging.getLogger(__name__)  # get logger obj, using __name__ for simpl3icity.
+log = logging.getLogger("Quantum_Edge_Detection")  # get logger obj.
+formatter = logging.Formatter("%(asctime)s : %(levelname)s : %(name)s : %(funcName)s : %(message)s")
+log.setLevel(logging.DEBUG)
+# File handler for log to dump to
+log_file_handler = logging.FileHandler("Latest_Run.log")
+log_file_handler.setFormatter(formatter)
+# Stream handler to output to stdout
+log_stream_handler = logging.StreamHandler(sys.stdout)
+log_stream_handler.setLevel(logging.INFO)  # handlers can set their logging independently or take the parent.
+log_stream_handler.setFormatter(formatter)
+# add handlers to log
+log.addHandler(log_file_handler)
+log.addHandler(log_stream_handler)
+
 robot = Robot.Connection()
+qed = QED()
+NN = NeuralNetwork()
 
 """
 Header function bellow are for any pre/post processing that needs to be done to keep things organized.
 Right now they just have some logging and timing, fill in all of your stuff inbetween.
 """
-# TODO fill in header functions
 def connect_car():
     log.info("Connecting to car...")
     robot.connect()
@@ -42,7 +54,7 @@ def get_photo():
 def get_edges(pic=None):
     log.debug("Getting edges of photo")
     start_time = time.perf_counter()
-    edge_img = QED.QED("mostRecentPhoto")
+    edge_img = qed.run_QED("mostRecentPhoto")
     step_2 = time.perf_counter() - start_time
     log.debug(f"Got edges of photo in {step_2:0.4f}sec")
     return edge_img

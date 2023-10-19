@@ -16,7 +16,7 @@ import os
 import os.path as fs
 import ast
 
-from Quantum.QED import default_QED as QED
+from Quantum.Quantum_Edge_Detection import QED
 
 
 # get logger, use __name__ to prevent conflict
@@ -33,6 +33,8 @@ config.read_file(open("./../Config.ini"))
 
 tags = ast.literal_eval(config['NN']['DATA_TAGS'])
 data_dir = config['NN']['TRAINING_DATA_DIR']
+
+qed = QED()
 
 if not isinstance(tags, list):
     log.error("Unable to convert NN.DATA_TAGS to a list. Check config file")
@@ -67,7 +69,7 @@ def main():
         log.info(f"Processing photo {file} {processed_count+1}/{dir_size}")
         print(f"Processing photo {processed_count + 1}/{dir_size}")
         full_path = fs.abspath(file)
-        processed = QED.run_QED(full_path) # process photo and get back np.array of ed image
+        processed = qed.run_QED(full_path) # process photo and get back np.array of ed image
         if processed is not None:
             processed *= 1000000 # Scale up probabilities to ints
             # convert np.array to PIL.Image, JPEG can't use floating-point numbers so convert to 0-255 (greyscale)

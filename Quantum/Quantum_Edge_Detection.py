@@ -5,6 +5,7 @@
 from qiskit import QuantumCircuit, execute, Aer
 import logging
 import os
+import sys
 import time
 from PIL import Image
 import math as m
@@ -20,7 +21,8 @@ log = logging.getLogger("Quantum_Edge_Detection")
 # Create a configparser object
 config = configparser.ConfigParser()
 # Read an existing configuration file
-config.read_file(open("./../Config.ini"))  # TODO need way to find Config.ini relative to cwd
+configFilePath = os.path.dirname(__file__)+"\\..\\Config.ini"  # get the path to Config.ini relative to this file
+config.read_file(open(configFilePath))
 
 class QED:
     # Do QED with args from config file if none are provided
@@ -159,8 +161,8 @@ class QED:
             image_RGB = pic  # nothing to do just checking its one of the valid types
         else:
             log.warning("Invalid type given to QED\n"
-                        "Expected types: PIL.Image.Image, File Path to image, NumPy Array\n"
-                        f"Got: {type(pic)}")
+                        "\tExpected types: PIL.Image.Image, File Path to image, NumPy Array\n"
+                        f"\tGot: {pic}\t{type(pic)}")
             return None
 
         # The image is in RGB, but we only need B&W
@@ -184,7 +186,6 @@ class QED:
             results = pool.map(self.process16x16, [(croped_imgs[N],N) for N in range(len(croped_imgs))])
             for r in results:
                 log.debug(f"Chunk {r[1]} processed")
-                print(f"Chunk {r[1]} processed")
                 if r[0] is None:
                     is_empty[r[1]] = True
                 else:
@@ -238,11 +239,16 @@ class QED:
 
 
 def main():
-    config = configparser.ConfigParser()
-    config.read_file(open("./../Config.ini"))
+    # if we are main we have to set up the stream handler
+    formatter = logging.Formatter("%(asctime)s : %(levelname)s : %(name)s : %(funcName)s : %(message)s")
+    # Stream handler to output to stdout
+    log_stream_handler = logging.StreamHandler(sys.stdout)
+    log_stream_handler.setLevel(logging.INFO)  # handlers can set their logging independently or take the parent.
+    log_stream_handler.setFormatter(formatter)
+    # add handlers to log
+    log.addHandler(log_stream_handler)
 
     parser = argparse.ArgumentParser(description="Run quantum edge detection (QED) on a photo")
-    # TODO use configparser for default values
     parser.add_argument('-f','--file',
                         help="File to be processed",
                         required=True)
@@ -260,15 +266,17 @@ def main():
                         help="Filename/location to save the result")
     parser.add_argument('-S', '--Scale', type=int,
                         default=1000000,
-                        help="Scaling factor to make the image more visible")
+                        help="Scaling factor to make the image more visible\n\tIf set too low image may be all black")
 
     args = parser.parse_args()
+    if args.output is None:
+        args.output = "QED-" + args.file # default file name
 
     qed = QED(args.chunk, args.shots, args.threads)
-    print(f"Running QED on: {args.file}")
+    log.info(f"Running QED on: {args.file}")
     processed = qed.run_QED(args.file)
     processed *= 1000000
-    print(f"QED finished, saving as: {args.file}")
+    log.info(f"QED finished, saving as: {args.file}")
     img = Image.fromarray(processed).convert("L")
     img.save(args.output)
 

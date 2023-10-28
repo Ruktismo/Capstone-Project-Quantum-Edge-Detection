@@ -38,7 +38,7 @@ log.addHandler(log_stream_handler)
 # Create a configparser object
 config = configparser.ConfigParser()
 # Read an existing configuration file
-configFilePath = os.path.dirname(__file__)+"\\..\\Config.ini"  # get the path to Config.ini relative to this file
+configFilePath = os.path.dirname(__file__)+"\\Config.ini"  # get the path to Config.ini relative to this file
 config.read_file(open(configFilePath))
 
 tags = ast.literal_eval(config['NN']['DATA_TAGS'])
@@ -60,8 +60,8 @@ def get_tag(name: str):
 
 
 def main():
-    files = os.listdir(".")
-    files.remove("Staging.py")  # Remove this file from the list, so it will not attempt to process it.
+    files = os.listdir("./Pre-Precessed-New")
+    # files.remove("Staging.py")  # Remove this file from the list, so it will not attempt to process it.
     dir_size = len(files)
     processed_count = 0  # count the num of files successfully processed
 
@@ -71,14 +71,13 @@ def main():
             break
         label = get_tag(file)
         # determine tag from name
-        if (label is None) or fs.isdir(file):
+        if (label is None) or fs.isdir("./Pre-Precessed-New/" + file):
             # if a tag can't be seen/isdir then skip.
             log.warning(f"File: {file} does not have a valid tag or is a directory. Skipping...")
             continue
 
         log.info(f"Processing photo {file} {processed_count+1}/{dir_size}")
-        print(f"Processing photo {processed_count + 1}/{dir_size}")
-        full_path = fs.abspath(file)
+        full_path = fs.abspath("./Pre-Precessed-New/" + file)
         processed = qed.run_QED(full_path)  # process photo and get back np.array of ed image
         if processed is not None:
             processed *= 1000000  # Scale up probabilities to ints
@@ -90,7 +89,7 @@ def main():
             try:
                 img.save(save_path)  # if save_path is not a proper path it will throw an OSError
                 # Move old photo into sub-folder
-                os.rename(fs.abspath(file), f"{label.title()}/{file}")
+                os.rename(fs.abspath("./Pre-Precessed-New/" + file), f"./Pre-Precessed-New/{label.title()}/{file}")
             except OSError as e:
                 log.error(f"Unable to save photo: {save_path}\nCheck file system to see if path is viable.")
                 log.error(f"Full Error:\n{e}")

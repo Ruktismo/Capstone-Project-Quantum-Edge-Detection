@@ -10,7 +10,7 @@
 #SBATCH --mail-type=ALL                   # Send an e-mail when a job starts, stops, or fails
 #SBATCH --mail-user=%u@asu.edu            # who to send the emails to
 
-# mamba create -n QED pillow qiskit matplotlib pylatexenc qiskit-ibm-runtime IPython qiskit-machine-learning
+# mamba create -n QED pillow qiskit matplotlib pylatexenc qiskit-ibm-runtime IPython qiskit-machine-learning qiskit-aer
 
 # move into project directory
 cd ~/Capstone-Project-Quantum-Edge-Detection/Pre-Proccessed_Images

@@ -29,7 +29,7 @@ class QED:
     def __init__(self, chunkSize=int(config['QED']['CHUNK_SIZE']),
                  shots=int(config['QED']['SHOTS']),
                  threadCount=int(config['QED']['QED_THREAD_COUNT'])):
-        log.info("setting up QED")
+        log.debug("setting up QED")
         self.CHUNK_SIZE = chunkSize
         self.THREAD_COUNT = threadCount
         self.SHOTS = shots  # Number of runs to do. More runs gets better quality. But also more time

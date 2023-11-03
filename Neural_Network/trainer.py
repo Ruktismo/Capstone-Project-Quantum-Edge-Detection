@@ -201,7 +201,7 @@ def run_predictions():
         image_size=(img_height, img_width),  # resize input images down to 160x64
     )
 
-    M = NeuralNetwork()
+    M = NeuralNetwork(file="./NewDatasetModel.tflite")
     i = 0
     times = []
     for f in ds.file_paths:
@@ -211,7 +211,7 @@ def run_predictions():
         ans = M.predict(image)
         tok = time.perf_counter()
         times.append(tok - tic)
-        print(f"{f[28:33]}: {ans}")
+        print(f"{f}: {ans}")
         i += 1
         if i > 100:
             print(sum(times)/len(times))
@@ -228,5 +228,6 @@ if __name__ == "__main__":
     # add handlers to log
     log.addHandler(log_stream_handler)
 
-    NNT = NeuralNetworkTrainer()
-    NNT.train(True)
+    #NNT = NeuralNetworkTrainer(model_name="NewDatasetModel.tflite")
+    #NNT.train(True)
+    run_predictions()

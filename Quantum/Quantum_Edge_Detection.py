@@ -21,7 +21,7 @@ log = logging.getLogger("Quantum_Edge_Detection")
 # Create a configparser object
 config = configparser.ConfigParser()
 # Read an existing configuration file
-configFilePath = os.path.dirname(__file__)+"\\..\\Config.ini"  # get the path to Config.ini relative to this file
+configFilePath = os.path.dirname(__file__)+"/../Config.ini"  # get the path to Config.ini relative to this file
 config.read_file(open(configFilePath))
 
 class QED:

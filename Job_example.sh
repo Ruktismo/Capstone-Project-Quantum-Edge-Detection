@@ -16,6 +16,7 @@
 cd ~/Capstone-Project-Quantum-Edge-Detection
 
 # load mamba env
+module load mamba/latest
 source activate QED_Training
 
 # run code

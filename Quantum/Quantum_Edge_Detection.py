@@ -233,7 +233,8 @@ class QED:
             # If not then leave as default black
             else:
                 pass
-
+        # scale image up so it can be seen as pixels
+        ed_image_arr *= 1000000
         # return edge detected image.
         return ed_image_arr
 

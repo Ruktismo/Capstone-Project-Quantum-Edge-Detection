@@ -1,11 +1,12 @@
 # Importing standard Qiskit libraries and configuring account
 # Libs needed:
 #   matplotlib, pillow, qiskit, pylatexenc, qiskit-ibm-runtime, qiskit-aer
-
 from qiskit import QuantumCircuit, execute, Aer
 import logging
 import os
+import sys
 import time
+from datetime import datetime
 from PIL import Image
 import math as m
 # from multiprocessing import Pool  Will work for windows but not linux. Instead use
@@ -20,20 +21,22 @@ log = logging.getLogger("Quantum_Edge_Detection")
 # Create a configparser object
 config = configparser.ConfigParser()
 # Read an existing configuration file
-config.read_file(open("./Config.ini"))  # TODO need way to find Config.ini relative to cwd
+configFilePath = os.path.dirname(__file__)+"/../Config.ini"  # get the path to Config.ini relative to this file
+config.read_file(open(configFilePath))
 
 class QED:
     # Do QED with args from config file if none are provided
     def __init__(self, chunkSize=int(config['QED']['CHUNK_SIZE']),
                  shots=int(config['QED']['SHOTS']),
                  threadCount=int(config['QED']['QED_THREAD_COUNT'])):
-        #log.info("setting up QED")
+        log.debug("setting up QED")
         self.CHUNK_SIZE = chunkSize
         self.THREAD_COUNT = threadCount
         self.SHOTS = shots  # Number of runs to do. More runs gets better quality. But also more time
         self.data_qb = m.ceil(m.log2(self.CHUNK_SIZE ** 2))  # Set to ceil(log_2(image.CropSize))
         self.anc_qb = 1  # This is the auxiliary qubit.
         self.total_qb = self.data_qb + self.anc_qb  # total qubits
+        self.processcount = 0
 
     # Convert the raw pixel values to probability amplitudes
     # i.e. sum of all pixels is one
@@ -148,7 +151,7 @@ class QED:
 
         return img_chunks
 
-    def run_QED(self, pic):
+    def run_QED(self, pic, save=False):
         # attempt to open image and/or convert to np.array
         if isinstance(pic, Image.Image):
             image_RGB = np.asarray(pic)
@@ -159,8 +162,8 @@ class QED:
             image_RGB = pic  # nothing to do just checking its one of the valid types
         else:
             log.warning("Invalid type given to QED\n"
-                        "Expected types: PIL.Image.Image, File Path to image, NumPy Array\n"
-                        f"Got: {type(pic)}")
+                        "\tExpected types: PIL.Image.Image, File Path to image, NumPy Array\n"
+                        f"\tGot: {pic}\t{type(pic)}")
             return None
 
         # The image is in RGB, but we only need B&W
@@ -184,8 +187,7 @@ class QED:
             results = pool.map(self.process16x16, [(croped_imgs[N],N) for N in range(len(croped_imgs))])
             for r in results:
                 log.debug(f"Chunk {r[1]} processed")
-                if r[1] % 100 == 0:
-                    print(f"Chunk {r[1]} processed")
+                print(f"Chunk {r[1]} processed")
                 if r[0] is None:
                     is_empty[r[1]] = True
                 else:
@@ -233,20 +235,57 @@ class QED:
             # If not then leave as default black
             else:
                 pass
+        # scale image up so it can be seen as pixels
+        ed_image_arr *= 1000000
+        if save:
+            # save the ed_image to disk in a folder named with the curr day
+            today = datetime.today()
+            base_path = os.path.basename(__file__)+f'\\{today.month}-{today.day}'
+            if not os.path.isdir(base_path):
+                os.mkdir(base_path)
+            img = Image.fromarray(ed_image_arr).convert("L")
+            save_path = f"{base_path}\\ED_image_{self.processcount}.jpg"
+            img.save(save_path)
 
         # return edge detected image.
-        ed_image_arr *= 1000000
-        img = Image.fromarray(ed_image_arr).convert("L")
-        img.save("./mostRecentEdges.jpg")
         return ed_image_arr
+
+def crop_image(image_array):
+    '''
+    Current cropping:
+        Define the cropping box coordinates (This will resize the image from 640 x 480 to 400 x 160)
+
+        Height of image stays the same across all images y1 = 320 and y2 = 480 will yield the height of 160
+
+        Width is dependent on left/right/straight.
+            For left, crop more of the right side data. x1 = 80 and x2 = 480
+            For right, crop more of the left side data. x1 = 160, x2 = 560
+            For straight, crop an even amount from both sides. x1 = 120, x2 = 520
+    '''
+
+    # Getting an image from the path
+    image = Image.fromarray(image_array)
+
+    # Crop the image according to the crop box passed in
+    # 256x64=62c    320x128=160c
+    # TODO get crop cords
+    cropped_image = image.crop((0,0,0,0))
+
+    # Returning the cropped image
+    return np.asarray(cropped_image)
 
 
 def main():
-    config = configparser.ConfigParser()
-    config.read_file(open("./../Config.ini"))
+    # if we are main we have to set up the stream handler
+    formatter = logging.Formatter("%(asctime)s : %(levelname)s : %(name)s : %(funcName)s : %(message)s")
+    # Stream handler to output to stdout
+    log_stream_handler = logging.StreamHandler(sys.stdout)
+    log_stream_handler.setLevel(logging.INFO)  # handlers can set their logging independently or take the parent.
+    log_stream_handler.setFormatter(formatter)
+    # add handlers to log
+    log.addHandler(log_stream_handler)
 
     parser = argparse.ArgumentParser(description="Run quantum edge detection (QED) on a photo")
-    # TODO use configparser for default values
     parser.add_argument('-f','--file',
                         help="File to be processed",
                         required=True)
@@ -267,12 +306,14 @@ def main():
                         help="Scaling factor to make the image more visible")
 
     args = parser.parse_args()
+    if args.output is None:
+        args.output = "QED-" + args.file # default file name
 
     qed = QED(args.chunk, args.shots, args.threads)
-    print(f"Running QED on: {args.file}")
+    log.info(f"Running QED on: {args.file}")
     processed = qed.run_QED(args.file)
     processed *= 1000000
-    print(f"QED finished, saving as: {args.file}")
+    log.info(f"QED finished, saving as: {args.file}")
     img = Image.fromarray(processed).convert("L")
     img.save(args.output)
 

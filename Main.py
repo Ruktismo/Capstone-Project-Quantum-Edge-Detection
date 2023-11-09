@@ -33,8 +33,8 @@ qed = QED()
 NN = NeuralNetwork()
 
 """
-Header function bellow are for any pre/post processing that needs to be done to keep things organized.
-Right now they just have some logging and timing, fill in all of your stuff inbetween.
+Header functions bellow are for any pre/post processing that needs to be done to keep things organized.
+Right now they just have some logging and timing, along with whatever call they need to make.
 """
 def connect_car():
     log.info("Connecting to car...")
@@ -93,7 +93,7 @@ def main():
     connect_car()  # Call car to initiate startup.
 
     """
-    This will be the format if we do a segmented approach. ie take photo -> process -> move -> loop.
+    This will be the format for a segmented approach. ie take photo -> process -> move -> loop.
     Its simple but lots of parts may be waiting when they could be doing somthing.
     We should do this approach first to get a sense of how long each step will take.
     

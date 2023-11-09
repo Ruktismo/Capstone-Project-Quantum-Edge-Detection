@@ -7,6 +7,8 @@ from keras.models import Sequential
 from keras import layers
 import keras
 
+import sys
+import os
 import time
 import logging
 from PIL import Image
@@ -17,13 +19,11 @@ from pathlib import Path
 # get logger
 log = logging.getLogger("Quantum_Edge_Detection")
 # TODO add arguments parser
-modelFilePath = os.path.dirname(__file__)+"\\model.tflite"
-
+modelFilePath = os.path.dirname(__file__)+"\\NewDatasetModel.tflite"
 
 class NeuralNetwork:
     def __init__(self, file=modelFilePath):
         self.file = file
-        print(os.getcwd())
         self.model = Interpreter(model_path=self.file)
         self.model.allocate_tensors()
         self.input_details = self.model.get_input_details()
@@ -39,7 +39,7 @@ class NeuralNetwork:
     def predict(self, pic):
         P = pic[np.newaxis, :, :, np.newaxis]  # model is expecting a shape of (0, imgX, imgY, 0)
         # set input for prediction
-        self.model.set_tensor(self.input_details[0]["index"], np.float32(P))
+        self.model.set_tensor(self.input_details[0]["index"], P)
         # preform prediction
         self.model.invoke()
         # get prediction
@@ -50,7 +50,7 @@ class NeuralNetwork:
         i = prediction.index(max(prediction))
         if prediction[i] < 0.5:
             log.warning("Model seems uncertain on this image")
-            exit(-20)
+            exit(-20)  # TODO should we kill on uncertainty?
         if i == 0:
             return 'r'
         elif i == 1:
@@ -62,18 +62,20 @@ class NeuralNetwork:
             exit(-10)
 
 class NeuralNetworkTrainer:
-    def __init__(self):
+    def __init__(self, data_path="../Post-Proccessed_images", model_name="model.tflite"):
         self.epochs = 10
         self.trainedModel = None
         self.history = None
+        self.data_path = data_path
+        self.model_name = model_name
 
-    def train_model(self, data_path="../Post-Proccessed_images"):
-        data_dir = Path(data_path)
+    def train_model(self):
+        data_dir = Path(self.data_path)
         img_width = 640  # 640
         img_height = 480  # 480
         batch_size = 32
         class_names = ["Right", "Straight", "Left"]
-
+        log.debug(f"Loading in dataset from {self.data_path}")
         train_ds, val_ds = tf.keras.utils.image_dataset_from_directory(
             data_dir,
             labels="inferred",  # labels are from directory names
@@ -90,13 +92,13 @@ class NeuralNetworkTrainer:
         shape = None
         for image_batch, labels_batch in val_ds:
             shape = image_batch.shape
-            print(image_batch.shape)
-            print(labels_batch)
+            #print(image_batch.shape)
+            #print(labels_batch)
             break
-
-        print(train_ds, val_ds)
-        print(np.shape(train_ds), np.shape(val_ds))
-
+        # TODO IDK if we should log these print statements
+        #print(train_ds, val_ds)
+        #print(np.shape(train_ds), np.shape(val_ds))
+        log.debug("Dataset loaded in, building model")
         AUTOTUNE = tf.data.AUTOTUNE
 
         train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
@@ -130,7 +132,7 @@ class NeuralNetworkTrainer:
         )
 
         model.summary()
-        log.debug("Starting Training")
+        log.debug("Model built, Starting Training")
         history = model.fit(train_ds, validation_data=val_ds, epochs=self.epochs)
         log.debug("Training complete")
         self.trainedModel = model
@@ -167,12 +169,13 @@ class NeuralNetworkTrainer:
         if self.trainedModel is None:
             log.error("No model to save")
             return
-        log.debug("Exporting the model...")
+        log.debug("Exporting the model to tflite file")
         converter = tf.lite.TFLiteConverter.from_keras_model(self.trainedModel)
         tflite_model = converter.convert()
 
+        log.debug(f"Saving as {self.model_name}")
         # Save the model.
-        with open("model.tflite", "wb") as f:
+        with open(self.model_name, "wb") as f:
             f.write(tflite_model)
 
         log.debug("Finished exporting the model.")
@@ -200,7 +203,7 @@ def run_predictions():
         image_size=(img_height, img_width),  # resize input images down to 160x64
     )
 
-    M = NeuralNetwork()
+    M = NeuralNetwork(file="./NewDatasetModel.tflite")
     i = 0
     times = []
     for f in ds.file_paths:
@@ -218,4 +221,15 @@ def run_predictions():
 
 
 if __name__ == "__main__":
+    # if we are main we have to set up the stream handler
+    formatter = logging.Formatter("%(asctime)s : %(levelname)s : %(name)s : %(funcName)s : %(message)s")
+    # Stream handler to output to stdout
+    log_stream_handler = logging.StreamHandler(sys.stdout)
+    log_stream_handler.setLevel(logging.INFO)  # handlers can set their logging independently or take the parent.
+    log_stream_handler.setFormatter(formatter)
+    # add handlers to log
+    log.addHandler(log_stream_handler)
+
+    #NNT = NeuralNetworkTrainer(model_name="NewDatasetModel.tflite")
+    #NNT.train(True)
     run_predictions()

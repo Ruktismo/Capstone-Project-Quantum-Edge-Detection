@@ -1,12 +1,12 @@
 # Importing standard Qiskit libraries and configuring account
 # Libs needed:
 #   matplotlib, pillow, qiskit, pylatexenc, qiskit-ibm-runtime, qiskit-aer
-
 from qiskit import QuantumCircuit, execute, Aer
 import logging
 import os
 import sys
 import time
+from datetime import datetime
 from PIL import Image
 import math as m
 # from multiprocessing import Pool  Will work for windows but not linux. Instead use
@@ -36,6 +36,7 @@ class QED:
         self.data_qb = m.ceil(m.log2(self.CHUNK_SIZE ** 2))  # Set to ceil(log_2(image.CropSize))
         self.anc_qb = 1  # This is the auxiliary qubit.
         self.total_qb = self.data_qb + self.anc_qb  # total qubits
+        self.processcount = 0
 
     # Convert the raw pixel values to probability amplitudes
     # i.e. sum of all pixels is one
@@ -150,7 +151,7 @@ class QED:
 
         return img_chunks
 
-    def run_QED(self, pic):
+    def run_QED(self, pic, save=False):
         # attempt to open image and/or convert to np.array
         if isinstance(pic, Image.Image):
             image_RGB = np.asarray(pic)
@@ -186,6 +187,7 @@ class QED:
             results = pool.map(self.process16x16, [(croped_imgs[N],N) for N in range(len(croped_imgs))])
             for r in results:
                 log.debug(f"Chunk {r[1]} processed")
+                print(f"Chunk {r[1]} processed")
                 if r[0] is None:
                     is_empty[r[1]] = True
                 else:
@@ -235,8 +237,42 @@ class QED:
                 pass
         # scale image up so it can be seen as pixels
         ed_image_arr *= 1000000
+        if save:
+            # save the ed_image to disk in a folder named with the curr day
+            today = datetime.today()
+            base_path = os.path.basename(__file__)+f'\\{today.month}-{today.day}'
+            if not os.path.isdir(base_path):
+                os.mkdir(base_path)
+            img = Image.fromarray(ed_image_arr).convert("L")
+            save_path = f"{base_path}\\ED_image_{self.processcount}.jpg"
+            img.save(save_path)
+
         # return edge detected image.
         return ed_image_arr
+
+def crop_image(image_array):
+    '''
+    Current cropping:
+        Define the cropping box coordinates (This will resize the image from 640 x 480 to 400 x 160)
+
+        Height of image stays the same across all images y1 = 320 and y2 = 480 will yield the height of 160
+
+        Width is dependent on left/right/straight.
+            For left, crop more of the right side data. x1 = 80 and x2 = 480
+            For right, crop more of the left side data. x1 = 160, x2 = 560
+            For straight, crop an even amount from both sides. x1 = 120, x2 = 520
+    '''
+
+    # Getting an image from the path
+    image = Image.fromarray(image_array)
+
+    # Crop the image according to the crop box passed in
+    # 256x64=62c    320x128=160c
+    # TODO get crop cords
+    cropped_image = image.crop((0,0,0,0))
+
+    # Returning the cropped image
+    return np.asarray(cropped_image)
 
 
 def main():
@@ -267,7 +303,7 @@ def main():
                         help="Filename/location to save the result")
     parser.add_argument('-S', '--Scale', type=int,
                         default=1000000,
-                        help="Scaling factor to make the image more visible\n\tIf set too low image may be all black")
+                        help="Scaling factor to make the image more visible")
 
     args = parser.parse_args()
     if args.output is None:

@@ -1,3 +1,5 @@
+import os
+
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.lite.python.interpreter import Interpreter
@@ -17,7 +19,7 @@ from pathlib import Path
 # get logger
 log = logging.getLogger("Quantum_Edge_Detection")
 # TODO add arguments parser
-modelFilePath = os.path.dirname(__file__)+"\\model.tflite"
+modelFilePath = os.path.dirname(__file__)+"\\NewDatasetModel.tflite"
 
 class NeuralNetwork:
     def __init__(self, file=modelFilePath):
@@ -43,16 +45,16 @@ class NeuralNetwork:
         # get prediction
         prediction = self.model.get_tensor(self.output_details[0]["index"])
         # prediction is an array of probabilities (0.0 to 1.0) of the format ["Right", "Straight", "Left"]
-        log.debug(f"Prediction [r,s,l]: {prediction}")
+        log.info(f"Prediction [r,s,l]: {prediction}")
         prediction = prediction.tolist()[0]
         i = prediction.index(max(prediction))
         if prediction[i] < 0.5:
             log.warning("Model seems uncertain on this image")
-            exit(-20)
+            exit(-20)  # TODO should we kill on uncertainty?
         if i == 0:
             return 'r'
         elif i == 1:
-            return 's'
+            return 'f'
         elif i == 2:
             return 'l'
         else:

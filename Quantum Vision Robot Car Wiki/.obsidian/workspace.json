@@ -43,8 +43,7 @@
               }
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -110,7 +109,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Installing Project.md",
+                "file": "Super Computer.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -127,7 +126,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Installing Project.md",
+                "file": "Super Computer.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -150,7 +149,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Installing Project.md"
+                "file": "Super Computer.md"
               }
             }
           },
@@ -181,10 +180,10 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "bc00bbdf1390f764",
+  "active": "2aee8bf564107135",
   "lastOpenFiles": [
-    "Capstone Project.md",
     "Installing Project.md",
+    "Capstone Project.md",
     "Quantum/8qbit-training-session-5-1000iters.png",
     "Quantum/8qbit-training-session-5-Examples.png",
     "Quantum/QED.md",

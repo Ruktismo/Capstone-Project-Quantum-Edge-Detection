@@ -20,14 +20,14 @@ log = logging.getLogger("Quantum_Edge_Detection")
 # Create a configparser object
 config = configparser.ConfigParser()
 # Read an existing configuration file
-config.read_file(open("./../Config.ini"))  # TODO need way to find Config.ini relative to cwd
+config.read_file(open("./Config.ini"))  # TODO need way to find Config.ini relative to cwd
 
 class QED:
     # Do QED with args from config file if none are provided
     def __init__(self, chunkSize=int(config['QED']['CHUNK_SIZE']),
                  shots=int(config['QED']['SHOTS']),
                  threadCount=int(config['QED']['QED_THREAD_COUNT'])):
-        log.info("setting up QED")
+        #log.info("setting up QED")
         self.CHUNK_SIZE = chunkSize
         self.THREAD_COUNT = threadCount
         self.SHOTS = shots  # Number of runs to do. More runs gets better quality. But also more time
@@ -184,7 +184,8 @@ class QED:
             results = pool.map(self.process16x16, [(croped_imgs[N],N) for N in range(len(croped_imgs))])
             for r in results:
                 log.debug(f"Chunk {r[1]} processed")
-                print(f"Chunk {r[1]} processed")
+                if r[1] % 100 == 0:
+                    print(f"Chunk {r[1]} processed")
                 if r[0] is None:
                     is_empty[r[1]] = True
                 else:
@@ -234,6 +235,9 @@ class QED:
                 pass
 
         # return edge detected image.
+        ed_image_arr *= 1000000
+        img = Image.fromarray(ed_image_arr).convert("L")
+        img.save("./mostRecentEdges.jpg")
         return ed_image_arr
 
 

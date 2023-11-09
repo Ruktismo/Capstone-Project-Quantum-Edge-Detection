@@ -18,7 +18,7 @@ log = logging.getLogger("Quantum_Edge_Detection")  # get logger obj.
 formatter = logging.Formatter("%(asctime)s : %(levelname)s : %(name)s : %(funcName)s : %(message)s")
 log.setLevel(logging.DEBUG)
 # File handler for log to dump to
-log_file_handler = logging.FileHandler("Latest_Run.log")
+log_file_handler = logging.FileHandler("Latest_Run.log", mode='w')
 log_file_handler.setFormatter(formatter)
 # Stream handler to output to stdout
 log_stream_handler = logging.StreamHandler(sys.stdout)
@@ -78,6 +78,15 @@ def send_command(command):
 
 
 def main():
+    testing = False
+    if testing:
+        edge_pic = get_edges()
+        command = decide_drive_command(edge_pic)
+        print("NN decision: " + command)
+        return
+
+
+
     # TODO do we need this?
     log.info("Capstone Project 2023- Quantum Vision Robot Car\nBy: Andrew Erickson, Yumi Lamansky, Meredith Kuhler"
              ", Michael Del Regno, Kenneth Wang, Zaid Buni")

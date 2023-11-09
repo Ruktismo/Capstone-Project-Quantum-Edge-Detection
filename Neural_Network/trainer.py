@@ -1,3 +1,5 @@
+import os
+
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.lite.python.interpreter import Interpreter
@@ -15,10 +17,13 @@ from pathlib import Path
 # get logger
 log = logging.getLogger("Quantum_Edge_Detection")
 # TODO add arguments parser
+modelFilePath = os.path.dirname(__file__)+"\\model.tflite"
+
 
 class NeuralNetwork:
-    def __init__(self, file="./model.tflite"):
+    def __init__(self, file=modelFilePath):
         self.file = file
+        print(os.getcwd())
         self.model = Interpreter(model_path=self.file)
         self.model.allocate_tensors()
         self.input_details = self.model.get_input_details()
@@ -34,21 +39,22 @@ class NeuralNetwork:
     def predict(self, pic):
         P = pic[np.newaxis, :, :, np.newaxis]  # model is expecting a shape of (0, imgX, imgY, 0)
         # set input for prediction
-        self.model.set_tensor(self.input_details[0]["index"], P)
+        self.model.set_tensor(self.input_details[0]["index"], np.float32(P))
         # preform prediction
         self.model.invoke()
         # get prediction
         prediction = self.model.get_tensor(self.output_details[0]["index"])
         # prediction is an array of probabilities (0.0 to 1.0) of the format ["Right", "Straight", "Left"]
-        log.debug(f"Prediction [r,s,l]: {prediction}")
+        log.info(f"Prediction [r,s,l]: {prediction}")
         prediction = prediction.tolist()[0]
         i = prediction.index(max(prediction))
         if prediction[i] < 0.5:
             log.warning("Model seems uncertain on this image")
+            exit(-20)
         if i == 0:
             return 'r'
         elif i == 1:
-            return 's'
+            return 'f'
         elif i == 2:
             return 'l'
         else:
@@ -204,7 +210,7 @@ def run_predictions():
         ans = M.predict(image)
         tok = time.perf_counter()
         times.append(tok - tic)
-        print(f"{f[28:33]}: {ans}")
+        print(f"{f}: {ans}")
         i += 1
         if i > 100:
             print(sum(times)/len(times))

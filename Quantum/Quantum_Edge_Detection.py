@@ -174,7 +174,11 @@ class QED:
             for j in range(image_RGB.shape[1]):
                 image[i].append(image_RGB[i][j][0] / 255.0)
 
-        image = np.array(image)
+        # convert to array and crop to smaller img
+        cc1 = (80, 160, 560, 480) # 480x320 -> 600 chunks
+        cc2 = (120, 320, 520, 480) # 400x160 -> 250 chunks
+        # np indexing [y1:y2, x1:x2]
+        image = np.array(image)[cc2[1]:cc2[3], cc2[0]:cc2[2]]
 
         # Then crop the result into chunks
         croped_imgs = self.crop(image)
@@ -187,6 +191,8 @@ class QED:
             results = pool.map(self.process16x16, [(croped_imgs[N],N) for N in range(len(croped_imgs))])
             for r in results:
                 log.debug(f"Chunk {r[1]} processed")
+                if r[1] % 100 == 0:
+                    log.info(f"Chunk {r[1]} processed")
                 print(f"Chunk {r[1]} processed")
                 if r[0] is None:
                     is_empty[r[1]] = True
@@ -205,11 +211,12 @@ class QED:
         tok = time.perf_counter()
         t = tok - tic
         log.debug(f"Total Compile/Run Time: {t:0.4f} seconds")
+        print(f"Total Compile/Run Time: {t:0.4f} seconds")
     # Processing End
 
         # Stitch the chunks back into one image.
         # first make empty image
-        ed_image_arr = np.zeros((image_RGB.shape[0], image_RGB.shape[1]))
+        ed_image_arr = np.zeros((image.shape[0], image.shape[1]))
         res = 0  # index of current result
 
         # Iterator for getting the indexes for pasting
@@ -250,30 +257,6 @@ class QED:
         # return edge detected image.
         return ed_image_arr
 
-def crop_image(image_array):
-    '''
-    Current cropping:
-        Define the cropping box coordinates (This will resize the image from 640 x 480 to 400 x 160)
-
-        Height of image stays the same across all images y1 = 320 and y2 = 480 will yield the height of 160
-
-        Width is dependent on left/right/straight.
-            For left, crop more of the right side data. x1 = 80 and x2 = 480
-            For right, crop more of the left side data. x1 = 160, x2 = 560
-            For straight, crop an even amount from both sides. x1 = 120, x2 = 520
-    '''
-
-    # Getting an image from the path
-    image = Image.fromarray(image_array)
-
-    # Crop the image according to the crop box passed in
-    # 256x64=62c    320x128=160c
-    # TODO get crop cords
-    cropped_image = image.crop((0,0,0,0))
-
-    # Returning the cropped image
-    return np.asarray(cropped_image)
-
 
 def main():
     # if we are main we have to set up the stream handler
@@ -303,11 +286,11 @@ def main():
                         help="Filename/location to save the result")
     parser.add_argument('-S', '--Scale', type=int,
                         default=1000000,
-                        help="Scaling factor to make the image more visible")
+                        help="Scaling factor to make the image more visible\n\tIf set too low image may be all black")
 
     args = parser.parse_args()
     if args.output is None:
-        args.output = "QED-" + args.file # default file name
+        args.output = args.file + "-QED.jpg" # default file name
 
     qed = QED(args.chunk, args.shots, args.threads)
     log.info(f"Running QED on: {args.file}")

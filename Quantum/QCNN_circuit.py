@@ -1,30 +1,15 @@
+import logging
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.circuit import ParameterVector
 from qiskit.circuit.library import ZFeatureMap
-from qiskit.quantum_info import SparsePauliOp
 from qiskit.utils import algorithm_globals
-#make sure to: pip install qiskit_algorithms
-from qiskit_machine_learning.neural_networks import EstimatorQNN
 
-import logging
-import os
 
-from Quantum import QED
-
-log = logging.getLogger(__name__)
+log = logging.getLogger("Quantum_Edge_Detection")
 
 # Set the seed for qiskit so randomness is controlled between runs.
 algorithm_globals.random_seed = 12345
-
-
-
-#function to call another file (QED)
-def execute_python_file(QED):
-    try:
-        os.system(f'python {QED}')
-    except FileNotFoundError:
-        print(f"ERROR: File '{QED}' does not exist!")
 
 
 # This is a convolution on 2-qbits. It will be used to expand to an n-qbit convolution later.
@@ -41,6 +26,7 @@ def conv_circuit(params):
     target.cx(1, 0)
     target.rz(np.pi / 2, 0)
     return target
+
 
 """
 Full convolution layer for main circuit.
@@ -101,47 +87,27 @@ def pool_layer(sources, sinks, param_prefix):
 
 
 # Main Building of QCNN circuit
-# TODO change convolution/pooling layers to be auto generated off of qbits
 def build_qcnn(qbits):
     log.debug("Building QCNN")
-    feature_map = ZFeatureMap(8)
+    # TODO do parameterized QPIE feature map for input to circuit.
+    #  It seams that qiskit may not currently support a way to do parameterized QPIE?
+    #  At least not in a way that the QNN class would recognize.
+    feature_map = ZFeatureMap(qbits)
 
-    ansatz = QuantumCircuit(8, name="Ansatz")
+    ansatz = QuantumCircuit(qbits, name="Ansatz")
+    layer = 1
+    i = qbits
+    ansatz.compose(conv_layer(i, 'c' + str(layer)), list(range(qbits)), inplace=True)
+    ansatz.compose(pool_layer(list(range(0, i // 2)), list(range(i // 2, i)), param_prefix="p" + str(layer)),
+                   list(range(0, qbits)), inplace=True)
+    layer += 1
+    i = i // 2
+    while i > 1:
+        ansatz.compose(conv_layer(i, 'c' + str(layer)), list(range(qbits - i, qbits)), inplace=True)
+        ansatz.compose(pool_layer(list(range(0, i // 2)), list(range(i // 2, i)), param_prefix="p" + str(layer)),
+                       list(range(qbits - i, qbits)), inplace=True)
+        layer += 1
+        i = i // 2
 
-
-    # First Convolutional Layer
-    ansatz.compose(conv_layer(8, "с1"), list(range(8)), inplace=True)
-
-    # First Pooling Layer
-    ansatz.compose(pool_layer([0, 1, 2, 3], [4, 5, 6, 7], "p1"),
-                   list(range(8)), inplace=True)
-
-    # Second Convolutional Layer
-    ansatz.compose(conv_layer(4, "c2"), list(range(4, 8)), inplace=True)
-
-    # Second Pooling Layer
-    ansatz.compose(pool_layer([0, 1], [2, 3], "p2"),
-                   list(range(4, 8)), inplace=True)
-
-    # Third Convolutional Layer
-    ansatz.compose(conv_layer(2, "c3"), list(range(6, 8)), inplace=True)
-
-    # Third Pooling Layer
-    ansatz.compose(pool_layer([0], [1], "p3"),
-                   list(range(6, 8)), inplace=True)
-
-    # Combining the feature map and ansatz
-    circuit = QuantumCircuit(8)
-    circuit.compose(feature_map, range(8), inplace=True)
-    circuit.compose(ansatz, range(8), inplace=True)
-
-    observable = SparsePauliOp.from_list([("Z" + "I" * 7, 1)])
-
-    # we decompose the circuit for the QNN to avoid additional data copying
-    qnn = EstimatorQNN(
-        circuit=circuit.decompose(),
-        observables=observable,
-        input_params=feature_map.parameters,
-        weight_params=ansatz.parameters,
-    )
-    return qnn
+    # returning the feature map and ansatz for VQC
+    return feature_map, ansatz

@@ -175,8 +175,7 @@ class QED:
                 image[i].append(image_RGB[i][j][0] / 255.0)
 
         # convert to array and crop to smaller img
-        # crop = (x1, y1, x2, y2) TODO Zaid put the crop cords below.
-        crop_cords = (120, 320, 520, 480)  # 400x160 -> 250 chunks
+        crop_cords = (96, 208, 544, 400)
         # np indexing [y1:y2, x1:x2]
         image = np.array(image)[crop_cords[1]:crop_cords[3], crop_cords[0]:crop_cords[2]]
 

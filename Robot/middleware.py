@@ -59,10 +59,15 @@ class Connection:
 
                 return
 
-
     def get_last_pic(self):
         self.connect()
-        self.shell.download_file('/tmp/pics/lastPic','mostRecentPhoto')
+        gotPhoto = False
+        while not gotPhoto:
+            try:
+                self.shell.download_file('/tmp/pics/lastPic','mostRecentPhoto')
+                gotPhoto = True
+            except:
+                pass
 
 def testRawCommand():
     connection = Connection()

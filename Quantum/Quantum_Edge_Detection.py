@@ -192,7 +192,7 @@ class QED:
                 log.debug(f"Chunk {r[1]} processed")
                 if r[1] % 100 == 0:
                     log.info(f"Chunk {r[1]} processed")
-                print(f"Chunk {r[1]} processed")
+                    print(f"Chunk {r[1]} processed")
                 if r[0] is None:
                     is_empty[r[1]] = True
                 else:
@@ -289,7 +289,7 @@ def main():
 
     args = parser.parse_args()
     if args.output is None:
-        args.output = args.file + "-QED.jpg" # default file name
+        args.output = args.file + "-QED.jpg"  # default file name
 
     qed = QED(args.chunk, args.shots, args.threads)
     log.info(f"Running QED on: {args.file}")

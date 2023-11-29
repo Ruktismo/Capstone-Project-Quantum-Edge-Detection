@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Super Computer.md",
+                "file": "Quantum/Boundary Error.md",
                 "mode": "source",
                 "source": false
               }
@@ -109,7 +109,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Super Computer.md",
+                "file": "Quantum/Boundary Error.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -126,7 +126,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Super Computer.md",
+                "file": "Quantum/Boundary Error.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -149,7 +149,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Super Computer.md"
+                "file": "Quantum/Boundary Error.md"
               }
             }
           },
@@ -182,12 +182,12 @@
   },
   "active": "2aee8bf564107135",
   "lastOpenFiles": [
+    "Super Computer.md",
     "Installing Project.md",
     "Capstone Project.md",
     "Quantum/8qbit-training-session-5-1000iters.png",
     "Quantum/8qbit-training-session-5-Examples.png",
     "Quantum/QED.md",
-    "Super Computer.md",
     "www.github.com/conda-forge/minifirge.md",
     "www.github.com/conda-forge",
     "www.github.com",

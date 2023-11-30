@@ -35,7 +35,9 @@ class Connection:
         self.controller = self.shell.process(['python3', robo_pwn_controller], cwd="/home/pi/Desktop/newCapstone/middleware/devices")
 
     def connect(self):
-        self.__init__()
+        # only reconnect if we lost it
+        if not self.shell.conected():
+            self.__init__()
         print('connected')
     def exec_control_command(self, command):
         self.connect()
@@ -49,14 +51,12 @@ class Connection:
                 self.controller.recvuntil(b'> ')
                 self.controller.sendline(b"l 0.55")
                 self.controller.recvuntil(b'> ')
-
                 return
             case "r":
                 self.controller.sendline(b"f 0.25")
                 self.controller.recvuntil(b'> ')
                 self.controller.sendline(b"r 0.55")
                 self.controller.recvuntil(b'> ')
-
                 return
 
     def get_last_pic(self):

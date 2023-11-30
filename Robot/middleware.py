@@ -64,11 +64,9 @@ class Connection:
 
     def get_last_pic(self):
         self.connect()
-        gotPhoto = False
-        while not gotPhoto:
+        for _ in range(3):
             try:
-                self.shell.download_file('/tmp/pics/lastPic','mostRecentPhoto')
-                gotPhoto = True
+                self.shell.download_file('/tmp/pics/lastPic', 'mostRecentPhoto')
             except:
                 pass
 

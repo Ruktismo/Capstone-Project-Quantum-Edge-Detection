@@ -37,7 +37,10 @@ class Connection:
     def connect(self):
         # only reconnect if we lost it
         if not self.shell.conected():
-            self.__init__()
+            self.shell = ssh(host='192.168.16.2', user='pi', password='raspberry')
+        if self.controller.poll() is not None:  # poll gives none is it's still running
+            self.controller = self.shell.process(['python3', robo_pwn_controller],
+                                                 cwd="/home/pi/Desktop/newCapstone/middleware/devices")
         print('connected')
     def exec_control_command(self, command):
         self.connect()

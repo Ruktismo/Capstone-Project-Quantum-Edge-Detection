@@ -19,7 +19,7 @@ from pathlib import Path
 # get logger
 log = logging.getLogger("Quantum_Edge_Detection")
 # TODO add arguments parser
-modelFilePath = os.path.dirname(__file__)+"\\NewDatasetModel.tflite"
+modelFilePath = os.path.dirname(__file__)+"\\448x192-New-Model.tflite"
 
 class NeuralNetwork:
     def __init__(self, file=modelFilePath):
@@ -38,6 +38,7 @@ class NeuralNetwork:
     # prediction on a full 640x480 images takes around 0.03 sec, on a laptop
     def predict(self, pic):
         P = pic[np.newaxis, :, :, np.newaxis]  # model is expecting a shape of (0, imgX, imgY, 0)
+        P = np.float32(P) # convert to 32-bit
         # set input for prediction
         self.model.set_tensor(self.input_details[0]["index"], P)
         # preform prediction

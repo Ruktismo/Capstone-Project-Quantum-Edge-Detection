@@ -27,10 +27,10 @@ log_stream_handler.setFormatter(formatter)
 # add handlers to log
 log.addHandler(log_file_handler)
 log.addHandler(log_stream_handler)
-
+"""
 robot = Robot.Connection()
 qed = QED()
-NN = NeuralNetwork()
+NN = NeuralNetwork()"""
 
 """
 Header functions bellow are for any pre/post processing that needs to be done to keep things organized.
@@ -54,7 +54,7 @@ def get_photo():
 def get_edges(pic=None):
     log.debug("Getting edges of photo")
     start_time = time.perf_counter()
-    edge_img = qed.run_QED("mostRecentPhoto")
+    edge_img = qed.run_QED("mostRecentPhoto.jpg")
     step_2 = time.perf_counter() - start_time
     log.debug(f"Got edges of photo in {step_2:0.4f}sec")
     return edge_img
@@ -125,4 +125,7 @@ def main():
 
 
 if __name__ == "__main__":
+    robot = Robot.Connection()
+    qed = QED()
+    NN = NeuralNetwork()
     main()

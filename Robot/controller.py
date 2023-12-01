@@ -5,6 +5,8 @@ from typing import Tuple
 import numpy as np
 import logging
 
+import os
+import shutil
 """
 Zaid: For purposes of testing and because imports were not working correctly
 I manually added the Buffer class from common, the Motors class from motors
@@ -275,6 +277,7 @@ def main():
             print(motors.get_servo_position())
         elif args[0] == "lights":
             motors.headlights(True if args[1] == "T" else False)
+
 
         #
         # ----- driving actions
